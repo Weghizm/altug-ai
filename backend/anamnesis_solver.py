@@ -142,7 +142,7 @@ async def solve_anamnesis_case(
             }
         })
 
-    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    clean_model = "gemini-3.6-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -292,7 +292,7 @@ Aşağıdaki klinik vaka analizini eksiksiz, anlaşılır ve Türk tıbbi termin
 Birebir aynı JSON şemasında Türkçe olarak saf JSON ver:
 """
 
-    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    clean_model = "gemini-3.6-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {

@@ -136,7 +136,7 @@ async def call_gemini_chat(
             "parts": parts
         })
 
-    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    clean_model = "gemini-3.6-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     payload = {
         "contents": contents,

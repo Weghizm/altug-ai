@@ -140,7 +140,7 @@ Konu: {topic}
             user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
         user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
 
-    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    clean_model = "gemini-3.6-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     
@@ -153,47 +153,49 @@ Konu: {topic}
     }
 
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise RuntimeError(f"Vaka Üretim Hatası ({response.status_code}): {response.text}")
-            
-        data = response.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            raise RuntimeError("Yapay zekadan yanıt alınamadı.")
-            
-        parts = candidates[0].get("content", {}).get("parts", [])
-        if not parts:
-            raise RuntimeError("Boş yanıt döndü.")
-            
-        raw_text = parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        try:
-            result = json.loads(clean_text)
-        except Exception:
-            s = clean_text.find('{')
-            e = clean_text.rfind('}')
-            if s != -1 and e != -1:
-                result = json.loads(clean_text[s:e+1])
-            else:
-                raise
-                
-        result["case_id"] = str(uuid.uuid4())
-        result["source_type"] = source_type
+        for attempt in range(3):
+            response = await client.post(url, headers=headers, json=payload)
+            if response.status_code == 200:
+                data = response.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        raw_text = parts[0].get("text", "").strip()
+                        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                        
+                        try:
+                            result = json.loads(clean_text)
+                        except Exception:
+                            s = clean_text.find('{')
+                            e = clean_text.rfind('}')
+                            if s != -1 and e != -1:
+                                result = json.loads(clean_text[s:e+1])
+                            else:
+                                raise
+                                
+                        result["case_id"] = str(uuid.uuid4())
+                        result["source_type"] = source_type
 
-        active_lang_key = "german" if language.lower() == "de" else "turkish"
-        active_obj = result.get(active_lang_key) or result.get("german") or result.get("turkish") or {}
-        
-        result["title"] = active_obj.get("title", topic)
-        result["patient_profile"] = active_obj.get("patient_profile", {})
-        result["patient_story"] = active_obj.get("patient_story", "")
-        result["vital_and_findings"] = active_obj.get("vital_and_findings", "")
-        result["anamnesis_summary"] = active_obj.get("anamnesis_summary", "")
-        result["questions"] = active_obj.get("questions", [])
-        
-        return result
+                        active_lang_key = "german" if language.lower() == "de" else "turkish"
+                        active_obj = result.get(active_lang_key) or result.get("german") or result.get("turkish") or {}
+                        
+                        result["title"] = active_obj.get("title", topic)
+                        result["patient_profile"] = active_obj.get("patient_profile", {})
+                        result["patient_story"] = active_obj.get("patient_story", "")
+                        result["vital_and_findings"] = active_obj.get("vital_and_findings", "")
+                        result["anamnesis_summary"] = active_obj.get("anamnesis_summary", "")
+                        result["questions"] = active_obj.get("questions", [])
+                        
+                        return result
+                        
+            if response.status_code in [429, 503] and attempt < 2:
+                # 429 veya 503 geçici bekleme süresi
+                await asyncio.sleep(6.0 if attempt == 0 else 12.0)
+                continue
+                
+            raise RuntimeError(f"Vaka Üretim Hatası ({response.status_code}): {response.text}")
 
 async def evaluate_user_case_answers(
     case_data: Dict[str, Any],
@@ -393,7 +395,7 @@ Yanıtını SADECE aşağıdaki saf JSON formatında ver:
                     }
                 })
 
-    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
+    clean_model = "gemini-3.6-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -405,24 +407,28 @@ Yanıtını SADECE aşağıdaki saf JSON formatında ver:
     }
 
     async with httpx.AsyncClient(timeout=150.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
+        for attempt in range(3):
+            response = await client.post(url, headers=headers, json=payload)
+            if response.status_code == 200:
+                data = response.json()
+                cand_parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
+                raw_text = cand_parts[0].get("text", "").strip()
+                clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                try:
+                    return json.loads(clean_text)
+                except Exception:
+                    s = clean_text.find('{')
+                    e = clean_text.rfind('}')
+                    if s != -1 and e != -1:
+                        return json.loads(clean_text[s:e+1])
+                    raise
+                    
+            if response.status_code in [429, 503] and attempt < 2:
+                await asyncio.sleep(6.0 if attempt == 0 else 12.0)
+                continue
+                
             raise RuntimeError(f"Değerlendirme API Hatası ({response.status_code}): {response.text}")
-            
-        data = response.json()
-        cand_parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-        raw_text = cand_parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        try:
-            return json.loads(clean_text)
-        except Exception:
-            s = clean_text.find('{')
-            e = clean_text.rfind('}')
-            if s != -1 and e != -1:
-                return json.loads(clean_text[s:e+1])
-            raise
 
 def generate_mock_12_case(topic: str = "Akut Koroner Sendrom", language: str = "tr") -> Dict[str, Any]:
     """
