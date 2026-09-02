@@ -1,0 +1,29 @@
+﻿{
+  "name": "Altuğ AI - Klinik Vaka & Sınav Simülatörü",
+  "short_name": "Altuğ AI",
+  "description": "Almanya ATA, FSP ve KP sınavları için yapay zeka destekli klinik vaka simülatörü ve medikal OCR değerlendiricisi.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

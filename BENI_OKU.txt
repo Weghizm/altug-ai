@@ -1,0 +1,23 @@
+﻿=======================================================================
+          ALTUĞ AI - KLİNİK VAKA VE SINAV SİMÜLATÖRÜ
+=======================================================================
+
+Bu uygulama Almanya ATA (Anästhesietechnischer Assistent) ve 
+Kenntnisprüfung sınavlarına hazırlık için özel olarak geliştirilmiştir.
+
+NASIL KULLANILIR?
+-----------------
+1. Bilgisayarınızda Python yüklü olduğundan emin olun.
+   (Eğer yüklü değilse: https://www.python.org/downloads/ adresinden 
+   indirip kurarken "Add Python to PATH" kutucuğunu işaretleyin.)
+
+2. "BASLAT.bat" dosyasına çift tıklayın.
+   - İlk açılışta gerekli kütüphaneleri otomatik yükler.
+   - Tarayıcınızda http://localhost:8000 adresinde uygulama otomatik açılır.
+
+3. Sağ üstteki "Ayarlar" (Çark) ikonundan Google Gemini API anahtarınızı 
+   girerek istediğiniz kadar vaka üretebilir, 4 sayfalık PDF çıktısı alabilir 
+   ve el yazısı fotoğraflarınızı yükleyerek yapay zekaya puanlatabilirsiniz.
+
+İyi çalışmalar ve sınavlarda başarılar dileriz!
+=======================================================================

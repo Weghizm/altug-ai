@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-600 selection:text-white;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(51, 65, 85, 0.8);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 1);
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.02); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s infinite ease-in-out;
+}
+
+/* ==========================================================================
+   YAZICI & PDF ÇIKTI STİLLERİ (4 Sayfa Tam Uyumlu & Saf Siyah Yazı Düzeni)
+   ========================================================================== */
+@media print {
+  /* Ekran arayüz butonlarını, gezinme çubuklarını, bildirimleri ve sekmeleri gizle */
+  nav,
+  header,
+  footer,
+  .no-print,
+  button,
+  input,
+  select,
+  .mode-selector {
+    display: none !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #000000 !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Sayfa gövdesi ve renk sıfırlaması - Saf Siyah & Beyaz */
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    font-size: 7.2pt !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Sayfa kenar boşlukları (A4 standart 4 sayfa tam hizalama) */
+  @page {
+    size: A4 portrait;
+    margin: 6mm 6mm 6mm 6mm;
+  }
+
+  /* Koyu arkaplanları ve gradyanları tamamen kaldır, temiz beyaz yap */
+  div, span, p, h1, h2, h3, h4, section, article {
+    background-image: none !important;
+  }
+
+  .bg-slate-900,
+  .bg-slate-950,
+  .bg-slate-900\/90,
+  .bg-slate-900\/80,
+  .bg-slate-900\/70,
+  .bg-slate-900\/60,
+  .bg-slate-950\/80,
+  .bg-slate-950\/90,
+  .bg-slate-950\/70,
+  .bg-teal-950\/20,
+  .bg-teal-950\/30,
+  .bg-teal-950\/40,
+  .bg-teal-950\/50,
+  .bg-blue-950\/20,
+  .bg-blue-950\/40,
+  .bg-amber-950\/20,
+  .bg-rose-950\/20,
+  .bg-emerald-950\/20 {
+    background: #ffffff !important;
+    border: 1px solid #94a3b8 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border-radius: 4px !important;
+    padding: 3px 5px !important;
+    margin-bottom: 3px !important;
+  }
+
+  /* Boşlukları daralt */
+  .space-y-8 > * + * {
+    margin-top: 0 !important;
+  }
+  .space-y-6 > * + * {
+    margin-top: 3px !important;
+  }
+  .space-y-4 > * + * {
+    margin-top: 2px !important;
+  }
+  .space-y-3 > * + * {
+    margin-top: 2px !important;
+  }
+  .space-y-2 > * + * {
+    margin-top: 2px !important;
+  }
+  .space-y-1 > * + * {
+    margin-top: 1px !important;
+  }
+
+  .p-8, .p-6, .p-5, .p-4 {
+    padding: 4px 6px !important;
+  }
+
+  .gap-6, .gap-4, .gap-3, .gap-2 {
+    gap: 3px !important;
+  }
+
+  /* Başlık ve Metin Boyutları */
+  h1, h2 {
+    font-size: 9.5pt !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    margin: 1px 0 !important;
+    color: #000000 !important;
+  }
+
+  h3, h4 {
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    margin: 1px 0 !important;
+    color: #000000 !important;
+  }
+
+  /* Tüm Metinler Saf Siyah */
+  .text-white,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300,
+  .text-slate-400,
+  .text-slate-500,
+  .text-slate-600,
+  .text-teal-400,
+  .text-teal-300,
+  .text-blue-400,
+  .text-blue-300,
+  .text-amber-400,
+  .text-amber-300,
+  .text-rose-400,
+  .text-emerald-400 {
+    color: #000000 !important;
+  }
+
+  /* 4 SAYFALIK KİTAPÇIK (BOOKLET) TAM SAYFA KONTROLÜ */
+  .booklet-page {
+    page-break-before: auto !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin: 0 !important;
+    padding: 4px 6px !important;
+    max-height: 275mm !important;
+    box-sizing: border-box !important;
+    border: 1.5px solid #000000 !important;
+  }
+
+  .booklet-page:last-child {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .booklet-page-header {
+    border-bottom: 2px solid #000000 !important;
+    padding-bottom: 2px !important;
+    margin-bottom: 3px !important;
+    font-weight: 900 !important;
+    font-size: 8.5pt !important;
+    color: #000000 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
+  /* 2 Sütunlu Yan Yana Düzen (Sorular ve Çözümler İçin) */
+  .grid.grid-cols-1.md\:grid-cols-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+  }
+
+  .grid.grid-cols-1.md\:grid-cols-2 > div {
+    border: 1px solid #94a3b8 !important;
+    padding: 2px 4px !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Çözüm ve Cevap Kutuları */
+  .p-1\.5, .p-2, .p-2\.5 {
+    padding: 2px 4px !important;
+  }
+}
