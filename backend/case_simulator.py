@@ -11,42 +11,48 @@ CASE_GEN_PROMPT_BILINGUAL = """Du bist Chefarzt der Anästhesiologie, Fachprüfe
 
 Erstelle anhand des Themas/Quelltexts ein hochprofessionelles, 4-SEITIGES ZWEISPRACHIGES (DEUTSCH + TÜRKISCH) KLINISCHES PRÜFUNGS- UND STUDIENBUCH für die deutsche ATA-Kenntnisprüfung.
 
-### DEUTSCHE ANÄSTHESIE- UND PRÜFUNGSSTANDARDS (STRIKT EINHALTEN!):
-Alle Lösungen, Behandlungsentscheidungen, Dosierungen und Abläufe MÜSSEN den aktuellen DEUTSCHEN LEITLINIEN entsprechen (DGAI, BDA, RKI, AWMF, ERC):
-1. **ATA-Kompetenzbereich & Rollenverständnis (ATA-OTA-G):** Vorbereitung des Narkosearbeitsplatzes, Narkosegeräte-Check (DGAI), Medikamentenaufzug nach dem 4-Augen-Prinzip, Assistenz bei Narkoseeinleitung/-ausleitung, Regionalanästhesie, Gefäßpunktionen (Arterie, ZVK) und Aufwachraum-Betreuung (AWR).
-2. **Pharmakotherapie nach deutschem Standard:** 
-   - Hypnotika: Propofol, Etomidat, Thiopental; Inhalationsanästhetika: Sevofluran, Desfluran (TIVA vs. balancierte Anästhesie).
-   - Analgetika / BtMG: Sufentanil, Fentanyl, Remifentanil, Piritramid (Dokumentationspflicht nach Betäubungsmittelgesetz).
-   - Muskelrelaxanzien & Antidote: Rocuronium (Dosis für elektiv 0.6 mg/kg vs. RSI 1.0-1.2 mg/kg) + Sugammadex (Bridion) zur Antagonisierung, Cisatracurium, Mivacurium.
-   - Notfallmedikamente: Akrinor (Cafedrin/Theodrenalin - typisch deutsch!), Noradrenalin, Adrenalin, Atropin, Ephedrin, Dantrolen (Maligne Hyperthermie), Lipofundin 20% (Lokalanästhetika-Intoxikation / LAST).
-3. **Atemwegsmanagement & RSI (DGAI-Leitlinie):** Präoxygenierung (FiO2 1.0, dicht sitzende Maske), Absaugbereitschaft mit großlumigem Yankauer-Katheter, Videolaryngoskopie als First-Line, Algorithmus beim unerwartet schwierigen Atemweg (Larynxmaske / LMA, Koniotomie).
-4. **Hygienestandards nach RKI (Robert Koch-Institut):** 5 Indikationen der Händedesinfektion (WHO), sterile Kautelen bei ZVK/Arterie/Spinalanästhesie, Barrieremaßnahmen, Tubus- und Beatmungsschlauch-Management.
-5. **Patientensicherheit & Kommunikation:** Team Time-Out (WHO-Checkliste), SBAR-Übergabeschema, Aufklärungsprüfung, Perioperative Angstlösung, Vermeidung von Lagerungsschäden (N. ulnaris, N. peroneus).
+### UNTERSCHEIDUNG ZWISCHEN ELEKTIVEN EINGRIFFEN UND NOTFÄLLEN (STRENG BEACHTEN!):
+- **WENN EIN ELEKTIVER / GEPLANTER EINGRIFF (z.B. elektive Cholezystektomie, Hüft-TEP, Knie-TEP, Strumaresektion, Leistenhernie, Kropf-OP, Katarakt, Tonsillektomie) gefordert ist:**
+  * Der Patient ist PLANMÄSSIG VORBEREITET, Nüchternheitsgrenzen sind vollständig eingehalten (mind. 6h feste Nahrung, 2h klare Flüssigkeiten).
+  * Prämedikationsvisite ist erfolgt: ASA-Klassifikation (ASA I-III), Mallampati I-IV, Cormack-Lehane, Zahnstatus, Gerinnung.
+  * Narkoseführung: Sanfte, kontrollierte Narkoseeinleitung (TIVA oder balancierte Anästhesie), elektive endotracheale Intubation, Larynxmaske (LMA) oder Regionalanästhesie (Spinal/Epidural/Plexus).
+  * KEINE RSI! RSI ist bei nüchternen elektiven Patienten ohne Regurgitationsrisiko kontraindiziert bzw. nicht indiziert.
+  * Frage 7 lautet: "Atemwegsmanagement & Narkoseeinleitung (Elektive Intubation / LMA)".
 
-### 4-SEITEN STRUKTUR (STRENG EINHALTEN):
+- **WENN EIN NOTFALL / AKUTER EINGRIFF (z.B. Ileus, akutes Abdomen, perforierte Appendizitis, Polytrauma, Aortenruptur, Notsectio) gefordert ist:**
+  * Der Patient ist NICHT NÜCHTERN oder gilt als vollmagig (Aspirationsrisiko).
+  * Indikation zur Rapid Sequence Induction (RSI / Crash-Induction): Präoxygenierung (FiO2 1.0), Absaugbereitschaft mit Yankauer, zügige Gabe von Hypnotikum und Muskelrelaxanz (Rocuronium 1.0-1.2 mg/kg oder Succinylcholin), Verzicht auf Zwischenbeatmung, Videolaryngoskopie.
+  * Frage 7 lautet: "Atemwegsmanagement & Notfall-RSI (Rapid Sequence Induction)".
+
+### DEUTSCHE ANÄSTHESIE- UND PRÜFUNGSSTANDARDS (DGAI, BDA, RKI, AWMF):
+1. **ATA-Kompetenzbereich (ATA-OTA-G):** Vorbereitung Narkosearbeitsplatz, DGAI-Gerätecheck, 4-Augen-Prinzip beim Medikamentenaufzug, Assistenz bei Einleitung/Ausleitung, sterile Kautelen (RKI), Aufwachraum (AWR).
+2. **Pharmakotherapie:** Hypnotika (Propofol, Etomidat, Thiopental), Opioide (Sufentanil, Fentanyl, Remifentanil, Piritramid nach BtMG), Muskelrelaxanzien (Rocuronium 0.6 mg/kg elektiv vs. 1.0-1.2 mg/kg RSI + Sugammadex/Bridion), Notfallmedikamente (Akrinor, Noradrenalin, Atropin, Dantrolen bei MH, Lipofundin 20% bei LAST).
+3. **Patientensicherheit:** Team Time-Out (WHO), SBAR-Übergabe, Vermeidung von Lagerungsschäden (N. ulnaris, N. peroneus), PONV-Prophylaxe (Dexamethason, Ondansetron).
+
+### 4-SEITEN STRUKTUR:
 - **SEITE 1 (🇩🇪 DEUTSCH):** Klinischer Fallbericht / Anamnese, Vorerkrankungen, Medikamente, Vitalparameter & Befunde + 12 Prüfungsfragen (Fragen 1-12).
 - **SEITE 2 (🇩🇪 DEUTSCH):** Strukturierte Anamnese-Zusammenfassung (Arztbrief/Epikrise/Übergabe) + 12 detaillierte Musterlösungen nach DGAI/RKI-Standard.
 - **SEITE 3 (🇹🇷 TÜRKÇE):** Sayfa 1'in eksiksiz Türkçe karşılığı (Hasta Anamnezi, Muayene, Vital Bulgular + 12 Sınav Sorusu).
 - **SEITE 4 (🇹🇷 TÜRKÇE):** Sayfa 2'nin eksiksiz Türkçe karşılığı (Almanya standartlarında Yapılandırılmış Epikriz & 12 Model Çözüm).
 
-### DIE 6 PFLICHTFRAGEN-KATEGORIEN (MÜSSEN EXAKT ENTHALTEN SEIN):
+### DIE 6 PFLICHTFRAGEN-KATEGORIEN:
 1. **Hastalığı Açıkla / Krankheit erklären:** Krankheitsbild, Pathophysiologie und spezifische Anästhesierelevanz / perioperative Risiken (ASA-Klasse).
-2. **Tedavi Yöntemleri / Therapiemethoden & Anästhesie:** Narkoseverfahren (TIVA/Balanciert/Regional), Intubationsstrategie (RSI/Elektive Intubation/LMA), Ablauf des Anästhesiemanagements.
-3. **Hastayla İletişim / Patientenkommunikation & Aufklärung:** Aufklärungsbestätigung, perioperative Betreuung, Angstmanagement, Einschleusung in den OP, Aufwachraum.
-4. **Hijyen Önlemleri / Hygienemaßnahmen (RKI):** OP-Asepsis, 5 Momente der Händehygiene (WHO), Sterilität bei Gefäßzugängen/Spinalanästhesie, Schutz vor Kontamination.
-5. **İlaçlar 1: Farmakoterapi & İlaç Seçimi / Pharmakotherapie & Medikamentenwahl:** Welche Medikamente (Hypnotika, Opioide, Muskelrelaxanzien, Notfallmedikamente) sind in diesem Fall indiziert? Nennen Sie die genauen DGAI-Standarddosierungen und Applikationswege.
-6. **İlaçlar 2: Reseptör Etkisi, Yan Etkiler, Kontrendikasyonlar & TABLO / Rezeptor-Pharmakologie, Nebenwirkungen & Kontraindikationen (TABELLE):** Welche Rezeptoren stimulieren oder blockieren die gewählten Medikamente (z.B. GABA-A, My-Opioid, Nicotinerg-ACh, Alpha-/Beta-Adrenorezeptoren)? Welche Nebenwirkungen treten auf? Welche Kontraindikationen und krankheitsspezifischen Komplikationen müssen beachtet werden? 
-   *WICHTIG / DİKKAT:* Die Musterlösung (ideal_answer) zu dieser Frage MUSS ZWINGEND als detaillierte und übersichtliche TABELLE aufgebaut sein mit den Spalten: [Medikament | Rezeptor & Wirkmechanismus | Wichtigste Nebenwirkungen | Kontraindikationen & Komplikationen].
-+ 6 Vertiefungsfragen (Atemwegsmanagement & RSI, Narkosegeräte-Check, Notfallkomplikationen wie Maligne Hyperthermie/LAST, Monitoring, Lagerung & BtMG, Aufwachraum).
+2. **Tedavi Yöntemleri / Therapiemethoden & Anästhesie:** Narkoseverfahren (TIVA/Balanciert/Regional/LMA), Ablauf des Anästhesiemanagements.
+3. **Hastayla İletişim / Patientenkommunikation & Aufklärung:** Aufklärungsbestätigung, perioperative Betreuung, Nüchternheit, Angstmanagement, Aufwachraum.
+4. **Hijyen Önlemleri / Hygienemaßnahmen (RKI):** OP-Asepsis, 5 Momente der Händehygiene (WHO), Sterilität bei Gefäßzugängen/Spinalanästhesie.
+5. **İlaçlar 1: Farmakoterapi & İlaç Seçimi / Pharmakotherapie & Medikamentenwahl:** Welche Medikamente (Hypnotika, Opioide, Muskelrelaxanzien, Notfallmedikamente) sind indiziert? Exakte DGAI-Standarddosierungen und Applikationswege.
+6. **İlaçlar 2: Reseptör Etkisi, Yan Etkiler, Kontrendikasyonlar & TABLO / Rezeptor-Pharmakologie, Nebenwirkungen & Kontraindikationen (TABELLE):** Welche Rezeptoren stimulieren/blockieren die gewählten Medikamente? Nebenwirkungen, Kontraindikationen.
+   *WICHTIG / DİKKAT:* Die Musterlösung (ideal_answer) MUSS ZWINGEND als übersichtliche TABELLE aufgebaut sein: [Medikament | Rezeptor & Wirkmechanismus | Wichtigste Nebenwirkungen | Kontraindikationen & Komplikationen].
++ 6 Vertiefungsfragen (Atemwegsmanagement, Narkosegeräte-Check, Notfallkomplikationen wie Maligne Hyperthermie/LAST/Blutung, Monitoring, Lagerung & BtMG, Aufwachraum).
 
 ### AUSGABEFORMAT:
 Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
 {
   "german": {
-    "title": "Titel des Falles (z.B. Akutes Abdomen bei Ileus - Notfall-RSI und Anästhesie-Management)",
-    "patient_profile": { "age": "58", "gender": "weiblich", "chief_complaint": "Akute Bauchschmerzen und Koterbrechen" },
+    "title": "Titel des Falles (z.B. Elektive laparoskopische Cholezystektomie - Anästhesie-Management)",
+    "patient_profile": { "age": "52", "gender": "weiblich", "chief_complaint": "Geplante elektive Operation bei symptomatischer Cholezystolithiasis" },
     "patient_story": "Ausführliche Patientenanamnese mit Vorerkrankungen, Medikamenten, Nüchternheitsstatus...",
-    "vital_and_findings": "Körperlicher Untersuchungsbefund, Vitalparameter (RR, HF, SpO2), Labor, EKG...",
+    "vital_and_findings": "Körperlicher Untersuchungsbefund, Vitalparameter (RR, HF, SpO2), Labor, EKG, ASA-Klasse...",
     "anamnesis_summary": "Strukturierte Anamnese-Zusammenfassung und Anästhesie-Planung nach DGAI-Standard...",
     "questions": [
       { "id": 1, "category": "Krankheit erklären", "question": "...", "ideal_answer": "...", "max_points": 10 },
@@ -55,7 +61,7 @@ Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
       { "id": 4, "category": "Hygienemaßnahmen (RKI)", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 5, "category": "Pharmakotherapie & Medikamente", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 6, "category": "Rezeptor-Pharmakologie & Tabelle", "question": "...", "ideal_answer": "Detaillierte TABELLE: [Medikament | Rezeptor/Wirkung | Nebenwirkungen | Kontraindikationen]...", "max_points": 10 },
-      { "id": 7, "category": "Atemwegsmanagement & RSI", "question": "...", "ideal_answer": "...", "max_points": 10 },
+      { "id": 7, "category": "Atemwegsmanagement & Einleitung", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 8, "category": "Narkosegeräte-Check & Vorbereitung", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 9, "category": "Notfall- & Komplikationsmanagement", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 10, "category": "Monitoring & Vitalparameter", "question": "...", "ideal_answer": "...", "max_points": 10 },
@@ -64,10 +70,10 @@ Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
     ]
   },
   "turkish": {
-    "title": "Vakanın Başlığı (Örn: İleuslu Hastada Akut Batın - Acil RSI ve Anestezi Yönetimi)",
-    "patient_profile": { "age": "58", "gender": "Kadın", "chief_complaint": "Şiddetli karın ağrısı ve fekaloid kusma" },
-    "patient_story": "Ayrıntılı hasta öyküsü, özgeçmiş, kullandığı ilaçlar, açlık durumu ve anestezi riskleri...",
-    "vital_and_findings": "Fizik muayene, vital parametreler (TA, Nabız, SpO2), laboratuvar ve EKG bulguları...",
+    "title": "Vakanın Başlığı (Örn: Elektif Laparoskopik Kolesistektomi - Anestezi Yönetimi)",
+    "patient_profile": { "age": "52", "gender": "Kadın", "chief_complaint": "Semptomatik safra kesesi taşı nedeniyle planlı elektif ameliyat" },
+    "patient_story": "Ayrıntılı hasta öyküsü, özgeçmiş, kullandığı ilaçlar, açlık durumu (6h/2h tam), anestezi riskleri...",
+    "vital_and_findings": "Fizik muayene, vital parametreler (TA, Nabız, SpO2), laboratuvar ve EKG bulguları, ASA skoru...",
     "anamnesis_summary": "DGAI ve Almanya ATA standartlarına uygun yapılandırılmış anestezi ve epikriz planı...",
     "questions": [
       { "id": 1, "category": "Hastalığı Açıkla", "question": "...", "ideal_answer": "...", "max_points": 10 },
@@ -76,7 +82,7 @@ Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
       { "id": 4, "category": "Hijyen Önlemleri (RKI Standardı)", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 5, "category": "İlaç Seçimi & Farmakoterapi", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 6, "category": "Reseptörler, Yan Etkiler & TABLO", "question": "...", "ideal_answer": "Ayrıntılı TABLO: [İlaç Adı | Reseptör & Etki | Yan Etkiler | Kontrendikasyonlar & Komplikasyonlar]...", "max_points": 10 },
-      { "id": 7, "category": "Havayolu Yönetimi & RSI", "question": "...", "ideal_answer": "...", "max_points": 10 },
+      { "id": 7, "category": "Havayolu Yönetimi & İndüksiyon", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 8, "category": "Cihaz Kontrolü & Hazırlık", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 9, "category": "Acil Durum & Komplikasyon Yönetimi", "question": "...", "ideal_answer": "...", "max_points": 10 },
       { "id": 10, "category": "Monitörizasyon & Vital Bulgular", "question": "...", "ideal_answer": "...", "max_points": 10 },
@@ -92,6 +98,7 @@ async def generate_12_question_case(
     context_text: str = "",
     source_type: str = "pdf",
     language: str = "tr",
+    urgency_type: str = "auto",
     api_key: str = "",
     model_name: str = "gemini-3.6-flash"
 ) -> Dict[str, Any]:
@@ -105,12 +112,34 @@ async def generate_12_question_case(
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     
+    urgency_directive = ""
+    if urgency_type == "elective":
+        urgency_directive = "\n### ÖNEMLİ TALİMAT: Bu vaka KESİNLİKLE ELEKTİF / PLANLANMIŞ BİR AMELİYATTIR (Elektiver Eingriff). Hasta açtır (6h/2h açlık tamdır), preoperatif viziti yapılmıştır. Kesinlikle acil RSI vakası YAPMA! Standart kontrollü elektif anestezi ve entübasyon/LMA yönetimi uygula.\n"
+    elif urgency_type == "emergency":
+        urgency_directive = "\n### ÖNEMLİ TALİMAT: Bu vaka KESİNLİKLE BİR ACİL / AKUT AMELİYATTIR (Notfalleingriff). Hasta tok / açlık süresi belirsizdir. Aspirasyon riski ve acil RSI (Rapid Sequence Induction) protokolünü uygula.\n"
+    else:
+        # Otomatik mod: Konu başlığını analiz et
+        lower_t = topic.lower()
+        if any(w in lower_t for w in ["elektif", "planlı", "planli", "elektiv", "geplant", "cholezystektomie", "kolesistektomi", "tep", "protez", "tiroid", "hernie", "fıtık", "fitik", "struma"]):
+            urgency_directive = "\n### ÖNEMLİ TALİMAT: Bu vaka ELEKTİF / PLANLANMIŞ BİR AMELİYATTIR (Elektiver Eingriff). Hasta açtır (Nüchternheit eingehalten), elektif anestezi uygula, acil RSI yapma.\n"
+        elif any(w in lower_t for w in ["acil", "akut", "notfall", "ileus", "ruptur", "rüptür", "perforasyon", "travma", "trauma", "kanama"]):
+            urgency_directive = "\n### ÖNEMLİ TALİMAT: Bu vaka ACİL BİR AMELİYATTIR (Notfalleingriff). Acil RSI protokolü uygula.\n"
+
     if source_type == "web":
         user_text = f"""{CASE_GEN_PROMPT_BILINGUAL}
-
+{urgency_directive}
 ### [KAYNAK: DÜNYA TIP LİTERATÜRÜ & WEB KLİNİK VAKA ARŞİVİ]
-'{topic}' konusu kapsamında uluslararası tıp kılavuzlarına (NEJM, UpToDate, Lancet, AWMF, DGIM) ve FSP/KP sınav standartlarına tam uygun, 4 sayfalık hem Almanca hem Türkçe tam eşlenik klinik vaka ve 12 soru JSON çıktısını oluştur.
+'{topic}' konusu kapsamında uluslararası tıp kılavuzlarına (DGAI, BDA, AWMF, DGIM) ve FSP/KP sınav standartlarına tam uygun, 4 sayfalık hem Almanca hem Türkçe tam eşlenik klinik vaka ve 12 soru JSON çıktısını oluştur.
 """
+    else:
+        user_text = f"""{CASE_GEN_PROMPT_BILINGUAL}
+{urgency_directive}
+### [KAYNAK: YÜKLÜ PDF DERS NOTU / KİTAP]
+Konu: {topic}
+"""
+        if context_text.strip():
+            user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
+        user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
     else:
         user_text = f"""{CASE_GEN_PROMPT_BILINGUAL}
 

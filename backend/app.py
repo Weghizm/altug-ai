@@ -47,6 +47,7 @@ class GenerateCaseExamRequest(BaseModel):
     topic_id: Optional[str] = None
     source_type: Optional[str] = "pdf" # "pdf" | "web"
     language: Optional[str] = "tr" # "tr" | "de"
+    urgency_type: Optional[str] = "auto" # "elective" | "emergency" | "auto"
 
 class EvaluateCaseExamRequest(BaseModel):
     case_data: dict
@@ -672,6 +673,7 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
                 context_text=context_text,
                 source_type=source_type,
                 language=language,
+                urgency_type=req.urgency_type or "auto",
                 api_key=api_key.strip(),
                 model_name=model_name
             )

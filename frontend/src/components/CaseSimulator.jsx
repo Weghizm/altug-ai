@@ -173,6 +173,8 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
     setTimeout(() => setFlashFeedback(false), 300);
   };
 
+  const [urgencyType, setUrgencyType] = useState('elective'); // 'elective' | 'emergency' | 'auto'
+
   // Öğrenci Analitiği ve Geçmişini Yükle
   const loadStudentAnalytics = async () => {
     try {
@@ -195,24 +197,30 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
     loadStudentAnalytics();
   }, []);
 
-  // Web modu için ATA (Anästhesietechnischer Assistent) Kenntnisprüfung sınav senaryoları
-  const webCaseSuggestions = [
-    { title: lang === 'de' ? 'RSI / Ileuseinleitung bei akutem Abdomen (DGAI)' : 'Acil RSI / İleus İndüksiyonu (DGAI Kılavuzu)' },
-    { title: lang === 'de' ? 'Unerwartet schwieriger Atemweg & Videolaryngoskopie' : 'Beklenmeyen Zor Havayolu & Videolaringoskopi' },
-    { title: lang === 'de' ? 'Maligne Hyperthermie im OP & Dantrolen-Protokoll' : 'Malign Hipertermi & Dantrolen Acil Protokolü' },
-    { title: lang === 'de' ? 'Anaphylaktischer Schock im OP (Muskelrelaxanzien)' : 'Ameliyathanede Anafilaktik Şok & Resüsitasyon' },
-    { title: lang === 'de' ? 'Lokalanästhetika-Intoxikation (LAST) & Lipidtherapie' : 'Lokal Anestezik Zehirlenmesi (LAST) & Lipid Tedavisi' },
-    { title: lang === 'de' ? 'Spinalanästhesie (SPA) bei Sectio & RKI-Hygiene' : 'Spinal Anestezi (SPA), Sezaryen & RKI Hijyeni' },
-    { title: lang === 'de' ? 'DGAI-Narkosegerätecheck & Vorbereitung' : 'DGAI Anestezi Cihazı Kontrolü & Hazırlık' },
-    { title: lang === 'de' ? 'Aufwachraum (AWR) & PONV / Shivering Management' : 'Derlenme Odası (AWR), PONV ve Titreme Tedavisi' }
+  // Web modu için Elektif ve Acil ATA Kenntnisprüfung sınav senaryoları
+  const electiveCaseSuggestions = [
+    { title: lang === 'de' ? 'Elektive laparoskopische Cholezystektomie (LMA vs. ITN, PONV)' : 'Elektif Laparoskopik Kolesistektomi (LMA/ITN, PONV Profilaksisi)' },
+    { title: lang === 'de' ? 'Elektive Hüft-TEP (Spinalanästhesie vs. Vollnarkose, ASA II)' : 'Elektif Kalça Protezi / TEP (Spinal Anestezi vs. Genel Anestezi)' },
+    { title: lang === 'de' ? 'Elektive Strumaresektion / Schilddrüsen-OP (Neuromonitoring)' : 'Elektif Tiroid Cerrahisi (Rekürren Sinir Monitörizasyonu)' },
+    { title: lang === 'de' ? 'Elektive Leistenhernie / TEP (TIVA, Ambulantes Operieren)' : 'Elektif İnguinal Herni Onarımı (Günübirlik TIVA & LMA)' },
+    { title: lang === 'de' ? 'Elektive Knie-Arthroskopie (Femoralis-/Ischiadikus-Block)' : 'Elektif Diz Artroskopisi (Periferik Sinir Bloğu)' }
+  ];
+
+  const emergencyCaseSuggestions = [
+    { title: lang === 'de' ? 'Akuter Ileus & Koterbrechen (Notfall-RSI / Crash-Induction)' : 'Akut İleus & Mide Doluluğu (Acil RSI / Crash-Induction)' },
+    { title: lang === 'de' ? 'Perforierte Appendizitis & Sepsis (DGAI-Notfallmanagement)' : 'Akut Perfore Apandisit & Septik Tablo (Acil Anestezi)' },
+    { title: lang === 'de' ? 'Polytrauma & Hämorrhagischer Schock (Massivtransfusion)' : 'Politravma & Hemorajik Şok Yönetimi (Acil İntübasyon)' },
+    { title: lang === 'de' ? 'Maligne Hyperthermie im OP & Dantrolen-Protokoll' : 'Malign Hipertermi Kriz Yönetimi & Dantrolen Protokolü' },
+    { title: lang === 'de' ? 'Lokalanästhetika-Intoxikation (LAST) & Lipofundin 20%' : 'Lokal Anestezik Zehirlenmesi (LAST) & Lipid Kurtarma' }
   ];
 
   // Seçili belgeyi bul
   const activeDoc = documents.find((d) => d.id === selectedCaseDocId) || documents[0];
 
   // 1. 12 Soruluk İki Dilli Vaka Üret
-  const handleGenerateCase = async (customTopic = null) => {
+  const handleGenerateCase = async (customTopic = null, forcedUrgency = null) => {
     let finalTopic = customTopic || topic.trim();
+    let finalUrgency = forcedUrgency || urgencyType;
     
     if (sourceType === 'pdf') {
       if (!selectedCaseDocId) {
@@ -246,7 +254,8 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
           doc_id: sourceType === 'pdf' ? selectedCaseDocId : null,
           topic_id: sourceType === 'pdf' ? selectedTopicId : null,
           source_type: sourceType,
-          language: lang
+          language: lang,
+          urgency_type: finalUrgency
         })
       });
 
@@ -258,10 +267,13 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
       if (data.case) {
         setCaseData(data.case);
         setStage('solving');
-        setActiveTabMode('booklet'); // Varsayılan olarak 4 sayfalık kitapçığı aç
+        setActiveTabMode('booklet');
+        if (data.warning) {
+          setErrorMessage(data.warning);
+        }
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Vaka üretimi başarısız oldu.');
+      setErrorMessage(err.message || 'Vaka oluşturulurken bir hata oluştu.');
     } finally {
       setIsGenerating(false);
     }
@@ -499,12 +511,68 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
             </div>
           )}
 
+          {/* Ameliyat Türü Seçici (Elektif vs. Acil vs. Otomatik) */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300 flex items-center justify-between">
+              <span>{lang === 'de' ? 'Eingriffsart / Dringlichkeit:' : 'Ameliyat Türü & Aciliyet Durumu:'}</span>
+              <span className="text-[11px] font-normal text-slate-400">
+                {urgencyType === 'elective' 
+                  ? (lang === 'de' ? '✅ Nüchtern, prämediziert, LMA/ITN' : '✅ Açlık tam, premedike, elektif entübasyon/LMA') 
+                  : urgencyType === 'emergency' 
+                    ? (lang === 'de' ? '🚨 Nicht nüchtern, Notfall-RSI' : '🚨 Tok/açlık belirsiz, acil RSI indüksiyonu')
+                    : (lang === 'de' ? '⚡ Automatisch nach Thema' : '⚡ Konu başlığına göre otomatik')}
+              </span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 p-1.5 bg-slate-950/80 rounded-2xl border border-slate-800">
+              
+              {/* 1. Elektif / Planlı Ameliyat */}
+              <button
+                type="button"
+                onClick={() => setUrgencyType('elective')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all ${
+                  urgencyType === 'elective'
+                    ? 'bg-gradient-to-r from-teal-500/20 to-emerald-500/20 text-teal-300 border border-teal-500/50 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                }`}
+              >
+                <span>📅 {lang === 'de' ? 'Elektiver Eingriff (Planmäßig)' : 'Elektif / Planlanmış Ameliyat'}</span>
+              </button>
+
+              {/* 2. Acil / Akut Ameliyat */}
+              <button
+                type="button"
+                onClick={() => setUrgencyType('emergency')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all ${
+                  urgencyType === 'emergency'
+                    ? 'bg-gradient-to-r from-rose-500/20 to-amber-500/20 text-rose-300 border border-rose-500/50 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                }`}
+              >
+                <span>🚨 {lang === 'de' ? 'Notfalleingriff (Akut / RSI)' : 'Acil / Akut Ameliyat (RSI)'}</span>
+              </button>
+
+              {/* 3. Otomatik */}
+              <button
+                type="button"
+                onClick={() => setUrgencyType('auto')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-2 transition-all ${
+                  urgencyType === 'auto'
+                    ? 'bg-blue-600/20 text-blue-300 border border-blue-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
+                }`}
+              >
+                <span>⚡ {lang === 'de' ? 'Automatisch' : 'Otomatik / Konuya Göre'}</span>
+              </button>
+
+            </div>
+          </div>
+
           {/* Web Kaynak Alanı ve Konu Girişi */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-300">
                 {sourceType === 'web' 
-                  ? (lang === 'de' ? 'Spezifisches medizinisches Thema oder Verdachtsdiagnose eingeben:' : 'Çalışmak İstediğiniz Tıbbi Konu / Ön Tanı:')
+                  ? (lang === 'de' ? 'Spezifisches medizinisches Thema oder Eingriff eingeben:' : 'Çalışmak İstediğiniz Tıbbi Konu / Ameliyat:')
                   : (lang === 'de' ? 'Zusätzlicher Themenschwerpunkt (Optional):' : 'Özel Klinik Odak / Konu Başlığı (Opsiyonel):')}
               </label>
               <div className="relative">
@@ -512,7 +580,11 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                   type="text"
                   value={topic}
                   onChange={(e) => setTopic(e.target.value)}
-                  placeholder={lang === 'de' ? 'z.B. Akutes Koronarsyndrom (STEMI), Lungenembolie, Appendizitis...' : 'Örn: Akut Koroner Sendrom (STEMI), Pulmoner Emboli, Sepsis Protokolü, Apandisit...'}
+                  placeholder={
+                    urgencyType === 'elective'
+                      ? (lang === 'de' ? 'z.B. Elektive Cholezystektomie, Hüft-TEP, Strumaresektion, Leistenhernie...' : 'Örn: Elektif Laparoskopik Kolesistektomi, Kalça TEP, Tiroid Cerrahisi, Fıtık Onarımı...')
+                      : (lang === 'de' ? 'z.B. Akutes Abdomen bei Ileus, perforierte Appendizitis, Polytrauma...' : 'Örn: Akut İleus & Mide Doluluğu, Perfore Apandisit, Politravma & Şok...')
+                  }
                   className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-4 pr-10 py-3.5 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-teal-500"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleGenerateCase();
@@ -522,26 +594,55 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
               </div>
             </div>
 
-            {/* Web İçin Hazır Öneriler */}
+            {/* Web İçin Hazır Öneriler (Elektif ve Acil Sekmeli) */}
             {sourceType === 'web' && (
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-400">
-                  {lang === 'de' ? '💡 Empfohlene Prüfungsklassiker:' : '💡 Sık Karşılaşılan Yüksek Verimli Sınav Vakaları:'}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {webCaseSuggestions.map((sug, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setTopic(sug.title);
-                        handleGenerateCase(sug.title);
-                      }}
-                      className="text-[11px] font-medium px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-teal-500/50 text-slate-300 hover:text-teal-300 transition-all"
-                    >
-                      {sug.title}
-                    </button>
-                  ))}
+              <div className="space-y-3">
+                {/* 1. Elektif Öneriler */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-bold text-teal-400">
+                    <span>📅</span>
+                    <span>{lang === 'de' ? 'Häufige elektive Prüfungsklassiker (Planmäßige OPs):' : 'Sık Sorulan Planlanmış (Elektif) Sınav Ameliyatları:'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {electiveCaseSuggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setTopic(sug.title);
+                          setUrgencyType('elective');
+                          handleGenerateCase(sug.title, 'elective');
+                        }}
+                        className="text-[11px] font-medium px-3 py-1.5 rounded-xl bg-teal-950/20 border border-teal-800/40 hover:border-teal-400/80 text-teal-200 hover:text-white transition-all"
+                      >
+                        {sug.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. Acil Öneriler */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center space-x-1.5 text-[11px] font-bold text-rose-400">
+                    <span>🚨</span>
+                    <span>{lang === 'de' ? 'Häufige Notfall- & Komplikationsfälle (RSI):' : 'Sık Sorulan Acil & Kriz Yönetimi Vakaları (RSI):'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {emergencyCaseSuggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setTopic(sug.title);
+                          setUrgencyType('emergency');
+                          handleGenerateCase(sug.title, 'emergency');
+                        }}
+                        className="text-[11px] font-medium px-3 py-1.5 rounded-xl bg-rose-950/20 border border-rose-800/40 hover:border-rose-400/80 text-rose-200 hover:text-white transition-all"
+                      >
+                        {sug.title}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
