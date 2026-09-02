@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sparkles, Stethoscope, CheckCircle2, AlertCircle, Loader2, Send, Copy, Check, Lightbulb, ChevronRight, BookOpen, Activity, ShieldCheck, UserCheck, MessageSquare, Award, ArrowRight, RotateCcw, Globe, FileText, Search, Printer, BookMarked, Edit3, Download, UploadCloud, Image, Trash2, History, TrendingUp, AlertTriangle, TrendingDown, X, Eye } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles, Stethoscope, CheckCircle2, AlertCircle, Loader2, Send, Copy, Check, Lightbulb, ChevronRight, BookOpen, Activity, ShieldCheck, UserCheck, MessageSquare, Award, ArrowRight, RotateCcw, Globe, FileText, Search, Printer, BookMarked, Edit3, Download, UploadCloud, Image, Trash2, History, TrendingUp, AlertTriangle, TrendingDown, X, Eye, Camera, RefreshCw, Smartphone } from 'lucide-react';
 import { translations } from '../i18n';
 
 export default function CaseSimulator({ lang = 'tr', documents = [], selectedDocId }) {
@@ -60,6 +60,16 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
 
+  // Canlı Kamera Vizörü ve Akışı (PWA & Mobil İçin)
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const [isLiveCameraOpen, setIsLiveCameraOpen] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState('environment'); // 'environment' (arka kamera) | 'user' (ön kamera)
+  const [cameraError, setCameraError] = useState('');
+  const [flashFeedback, setFlashFeedback] = useState(false);
+
   // Öğrenci Gelişim Hafızası & Geçmiş Vaka Analitiği
   const [studentAnalytics, setStudentAnalytics] = useState(null);
   const [caseHistory, setCaseHistory] = useState([]);
@@ -74,6 +84,80 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+
+  // Canlı Kamerayı Başlat
+  const startLiveCamera = async (facing = cameraFacing) => {
+    setCameraError('');
+    setIsLiveCameraOpen(true);
+    try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
+      
+      const constraints = {
+        video: {
+          facingMode: { ideal: facing },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        },
+        audio: false
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.warn('Canlı kamera akışı açılamadı, doğrudan dosya seçiciye yönlendiriliyor:', err);
+      // İzin verilmediyse veya desteklenmiyorsa standart kamera inputunu tıkla
+      stopLiveCamera();
+      if (cameraInputRef.current) {
+        cameraInputRef.current.click();
+      }
+    }
+  };
+
+  // Kamerayı Kapat
+  const stopLiveCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setIsLiveCameraOpen(false);
+  };
+
+  // Ön / Arka Kamera Değiştir
+  const toggleCameraFacing = () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    startLiveCamera(nextFacing);
+  };
+
+  // Canlı Kameradan Fotoğraf Çek
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const base64 = canvas.toDataURL('image/jpeg', 0.88);
+
+    const newPhoto = {
+      id: Math.random().toString(36).substring(7),
+      name: `Kamera_Sayfa_${uploadedImages.length + 1}.jpg`,
+      mimeType: 'image/jpeg',
+      base64: base64
+    };
+
+    setUploadedImages((prev) => [...prev, newPhoto]);
+
+    // Çekim flaş efekti
+    setFlashFeedback(true);
+    setTimeout(() => setFlashFeedback(false), 300);
+  };
 
   // Öğrenci Analitiği ve Geçmişini Yükle
   const loadStudentAnalytics = async () => {
@@ -948,17 +1032,32 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                     </p>
                   </div>
 
+                  {/* Gizli Kamera ve Galeri Inputları */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+
                   {/* Yükleme ve Doğrudan Kamera Butonları */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* 1. Kamerayı Aç & Çek (Mobilde doğrudan kamera açar) */}
-                    <label className="border-2 border-dashed border-purple-500/50 hover:border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-purple-950/20 hover:bg-purple-950/30 transition-all group shadow-md">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
+                    {/* 1. Canlı Kamerayı Aç / Fotoğraf Çek */}
+                    <button
+                      type="button"
+                      onClick={() => startLiveCamera()}
+                      className="border-2 border-dashed border-purple-500/50 hover:border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-purple-950/20 hover:bg-purple-950/30 transition-all group shadow-md"
+                    >
                       <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 group-hover:scale-110 transition-transform mb-2">
                         <Camera className="w-6 h-6" />
                       </div>
@@ -966,19 +1065,16 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                         {lang === 'de' ? '📸 Kamera öffnen & Foto aufnehmen' : '📸 Kamerayı Aç & Fotoğraf Çek'}
                       </span>
                       <span className="text-[11px] text-purple-300/70 mt-0.5">
-                        {lang === 'de' ? 'Direkt mit dem Smartphone fotografieren' : 'Telefonla çözdüğünüz kağıdı hemen çekin'}
+                        {lang === 'de' ? 'Direkt mit dem Smartphone fotografieren' : 'Uygulama içinden canlı kamerayla çekin'}
                       </span>
-                    </label>
+                    </button>
 
                     {/* 2. Galeriden / Dosyalardan Seç */}
-                    <label className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md"
+                    >
                       <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
                         <UploadCloud className="w-6 h-6" />
                       </div>
@@ -988,7 +1084,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                       <span className="text-[11px] text-slate-500 mt-0.5">
                         {lang === 'de' ? '1-4 Seiten gleichzeitig hochladen' : '1-4 Sayfa • Çoklu seçim yapabilirsiniz'}
                       </span>
-                    </label>
+                    </button>
                   </div>
 
                   {/* Yüklenen Fotoğrafların Önizleme Listesi */}
@@ -1425,6 +1521,105 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
             })}
           </div>
 
+        </div>
+      )}
+
+      {/* =========================================================================
+          MODAL 0: CANLI MOBİL KAMERA VİZÖRÜ & FOTOĞRAF ÇEKİCİ (PWA & MOBİL)
+         ========================================================================= */}
+      {isLiveCameraOpen && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col justify-between select-none">
+          {/* Flaş Efekti */}
+          {flashFeedback && (
+            <div className="absolute inset-0 bg-white z-50 opacity-80 pointer-events-none transition-opacity duration-300" />
+          )}
+
+          {/* Kamera Üst Kontrol Barı */}
+          <div className="relative z-20 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+            <button
+              type="button"
+              onClick={stopLiveCamera}
+              className="p-2.5 rounded-full bg-black/60 text-white hover:bg-black/90 active:scale-95 transition-all backdrop-blur-md"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <div className="px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-purple-500/40 text-xs font-black text-purple-300 flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+              <span>{lang === 'de' ? `Seite #${uploadedImages.length + 1} aufnehmen` : `Sayfa #${uploadedImages.length + 1} Çekiliyor`}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={toggleCameraFacing}
+              className="p-2.5 rounded-full bg-black/60 text-white hover:bg-black/90 active:scale-95 transition-all backdrop-blur-md"
+              title="Kamera Değiştir (Ön/Arka)"
+            >
+              <RefreshCw className="w-6 h-6 text-purple-400" />
+            </button>
+          </div>
+
+          {/* Kamera Canlı Video Akışı ve A4 Hizalama Çerçevesi */}
+          <div className="relative flex-1 w-full h-full overflow-hidden flex items-center justify-center bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+
+            {/* A4 Kağıt Hizalama Rehber Çerçevesi */}
+            <div className="relative z-10 w-[85%] max-w-md aspect-[3/4] border-2 border-purple-400/80 rounded-3xl shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] pointer-events-none flex flex-col justify-between p-4">
+              <div className="flex justify-between">
+                <div className="w-6 h-6 border-t-4 border-l-4 border-purple-400 rounded-tl-lg" />
+                <div className="w-6 h-6 border-t-4 border-r-4 border-purple-400 rounded-tr-lg" />
+              </div>
+
+              <div className="text-center py-2 px-3 rounded-xl bg-black/60 backdrop-blur-sm mx-auto text-[11px] font-bold text-purple-200">
+                {lang === 'de' ? 'A4-Prüfungsbogen im Rahmen ausrichten' : 'A4 Sınav Kağıdını Çerçeveye Hizalayın'}
+              </div>
+
+              <div className="flex justify-between">
+                <div className="w-6 h-6 border-b-4 border-l-4 border-purple-400 rounded-bl-lg" />
+                <div className="w-6 h-6 border-b-4 border-r-4 border-purple-400 rounded-br-lg" />
+              </div>
+            </div>
+          </div>
+
+          {/* Kamera Alt Kontrol ve Çekim Barı */}
+          <div className="relative z-20 flex items-center justify-around p-6 bg-gradient-to-t from-black/90 via-black/70 to-transparent">
+            {/* Son Çekilen Fotoğraf Önizlemesi */}
+            <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-purple-500/40 bg-slate-900 flex items-center justify-center">
+              {uploadedImages.length > 0 ? (
+                <img
+                  src={uploadedImages[uploadedImages.length - 1].base64}
+                  alt="Son Çekilen"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-[10px] text-slate-500 font-bold">0 Sayfa</span>
+              )}
+            </div>
+
+            {/* Büyük Deklanşör Butonu */}
+            <button
+              type="button"
+              onClick={capturePhoto}
+              className="w-20 h-20 rounded-full border-4 border-white/80 flex items-center justify-center bg-white/20 active:scale-90 transition-transform shadow-2xl"
+            >
+              <div className="w-16 h-16 rounded-full bg-white active:bg-purple-300 shadow-inner" />
+            </button>
+
+            {/* Tamamla / Kapat Butonu */}
+            <button
+              type="button"
+              onClick={stopLiveCamera}
+              className="px-4 py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-black shadow-lg shadow-emerald-500/30 active:scale-95 transition-all"
+            >
+              {lang === 'de' ? `Fertig (${uploadedImages.length})` : `Tamam (${uploadedImages.length})`}
+            </button>
+          </div>
         </div>
       )}
 
