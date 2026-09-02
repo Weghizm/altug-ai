@@ -707,12 +707,12 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
                     "success": True,
                     "case": mock_data,
                     "is_mock": True,
-                    "warning": "Gemini API ücretsiz kota sınırına (Rate Limit) ulaşıldı. Kesinti olmaması için kaliteli simülasyon vaka şablonu yüklendi."
+                    "warning": f"Google Gemini API 429 (Kota Sınırı): {err_msg}"
                 }
             raise HTTPException(status_code=500, detail=f"Vaka üretimi sırasında hata: {err_msg}")
     else:
         mock_data = generate_mock_12_case(topic=topic, language=language)
-        return {"success": True, "case": mock_data, "is_mock": True}
+        return {"success": True, "case": mock_data, "is_mock": True, "warning": "API Anahtarı bulunamadı (Render Environment veya Ayarlar menüsünden GEMINI_API_KEY tanımlayınız)."}
 
 @app.post("/api/evaluate-case-exam")
 async def evaluate_case_exam_endpoint(req: EvaluateCaseExamRequest):
