@@ -143,9 +143,8 @@ async def solve_anamnesis_case(
         })
 
     models_to_try = [clean_model]
-    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
-        if alt not in models_to_try:
-            models_to_try.append(alt)
+    if "gemini-3.7-flash" not in models_to_try:
+        models_to_try.append("gemini-3.7-flash")
 
     headers = {"Content-Type": "application/json"}
     payload = {
@@ -284,9 +283,8 @@ Birebir aynı JSON şemasında Türkçe olarak saf JSON ver:
 """
 
     models_to_try = [clean_model]
-    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
-        if alt not in models_to_try:
-            models_to_try.append(alt)
+    if "gemini-3.7-flash" not in models_to_try:
+        models_to_try.append("gemini-3.7-flash")
 
     headers = {"Content-Type": "application/json"}
     payload = {

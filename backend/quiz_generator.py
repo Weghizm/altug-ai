@@ -169,9 +169,8 @@ async def call_gemini_api(prompt: str, api_key: str, model_name: str = "gemini-3
     clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
         
     models_to_try = [clean_model]
-    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
-        if alt not in models_to_try:
-            models_to_try.append(alt)
+    if "gemini-3.7-flash" not in models_to_try:
+        models_to_try.append("gemini-3.7-flash")
 
     headers = {"Content-Type": "application/json"}
     payload = {
