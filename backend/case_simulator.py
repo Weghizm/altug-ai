@@ -140,15 +140,6 @@ Konu: {topic}
         if context_text.strip():
             user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
         user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
-    else:
-        user_text = f"""{CASE_GEN_PROMPT_BILINGUAL}
-
-### [KAYNAK: YÜKLÜ PDF DERS NOTU / KİTAP]
-Konu: {topic}
-"""
-        if context_text.strip():
-            user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
-        user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
 
     payload = {
         "contents": [{"parts": [{"text": user_text}]}],
