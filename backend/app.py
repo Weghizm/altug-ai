@@ -884,7 +884,6 @@ async def export_case_pdf_endpoint(req: dict = Body(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF oluşturma hatası: {str(e)}")
 
-# Frontend Statik Dosyalarını Sunma (Production / Standalone Mod)
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
@@ -895,7 +894,13 @@ if FRONTEND_DIST.exists():
             raise HTTPException(status_code=404, detail="Not Found")
         target_file = FRONTEND_DIST / full_path
         if target_file.is_file():
-            return FileResponse(target_file)
-        return FileResponse(FRONTEND_DIST / "index.html")
+            resp = FileResponse(target_file)
+            if target_file.name in ["sw.js", "manifest.json", "index.html"]:
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            return resp
+        resp = FileResponse(FRONTEND_DIST / "index.html")
+        resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        return resp
+
 
 
