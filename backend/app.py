@@ -94,7 +94,7 @@ class SubmitQuizRequest(BaseModel):
 
 class SettingsRequest(BaseModel):
     gemini_api_key: Optional[str] = None
-    model_name: Optional[str] = "gemini-2.5-flash"
+    model_name: Optional[str] = "gemini-3.6-flash"
     default_difficulty: Optional[str] = "Orta"
     default_question_count: Optional[int] = 5
 
@@ -105,15 +105,16 @@ def get_effective_api_key(explicit_key: Optional[str] = None) -> str:
     2. Render.com / .env ortam değişkeni (os.environ['GEMINI_API_KEY'])
     3. Veritabanından gelen (geçersiz test tokenları hariç)
     """
+    key = ""
     if explicit_key and len(explicit_key.strip()) > 10:
-        return explicit_key.strip()
-    env_key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if env_key and len(env_key) > 10:
-        return env_key
-    db_key = get_setting("gemini_api_key", "").strip()
-    if db_key and len(db_key) > 10 and not db_key.startswith("AQ."):
-        return db_key
-    return env_key or db_key
+        key = explicit_key.strip()
+    elif os.environ.get("GEMINI_API_KEY", "").strip():
+        key = os.environ.get("GEMINI_API_KEY", "").strip()
+    else:
+        db_key = get_setting("gemini_api_key", "").strip()
+        if db_key and len(db_key) > 10 and not db_key.startswith("AQ."):
+            key = db_key
+    return key.strip().strip('"').strip("'")
 
 def get_effective_model_name(explicit_model: Optional[str] = None) -> str:
     """

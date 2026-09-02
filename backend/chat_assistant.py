@@ -136,10 +136,8 @@ async def call_gemini_chat(
             "parts": parts
         })
 
-    models_to_try = [clean_model]
-    if "gemini-3.7-flash" not in models_to_try:
-        models_to_try.append("gemini-3.7-flash")
-
+    clean_model = "gemini-3.6-flash"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     payload = {
         "contents": contents,
         "generationConfig": {
@@ -148,24 +146,28 @@ async def call_gemini_chat(
         }
     }
     
-    last_error = None
     async with httpx.AsyncClient(timeout=120.0) as client:
-        for current_model in models_to_try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
+        response = await client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            error_msg = response.text
             try:
-                response = await client.post(url, headers=headers, json=payload)
-                if response.status_code == 200:
-                    data = response.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            return parts[0].get("text", "").strip()
-                last_error = f"Chat API Hatası {current_model} ({response.status_code}): {response.text}"
-            except Exception as e:
-                last_error = f"Chat Hatası {current_model}: {str(e)}"
-                
-    raise RuntimeError(last_error or "Sohbet için denenen tüm Gemini modellerinden yanıt alınamadı.")
+                err_json = response.json()
+                if "error" in err_json and "message" in err_json["error"]:
+                    error_msg = err_json["error"]["message"]
+            except Exception:
+                pass
+            raise RuntimeError(f"Gemini Chat Hatası ({response.status_code}): {error_msg}")
+            
+        data = response.json()
+        candidates = data.get("candidates", [])
+        if not candidates:
+            raise RuntimeError("Yapay zekadan yanıt alınamadı.")
+            
+        parts = candidates[0].get("content", {}).get("parts", [])
+        if not parts:
+            raise RuntimeError("Boş yanıt döndü.")
+            
+        return parts[0].get("text", "").strip()
 
 def generate_mock_chat_response(user_message: str, doc_id: Optional[str] = None) -> str:
     """
