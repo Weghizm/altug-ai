@@ -85,7 +85,7 @@ class GenerateQuizRequest(BaseModel):
     question_type: Optional[str] = "mcq" # "mcq" | "classic"
     language: Optional[str] = "tr" # "tr" | "de"
     api_key: Optional[str] = None
-    model_name: Optional[str] = "gemini-3.6-flash"
+    model_name: Optional[str] = "gemini-2.5-flash"
 
 class SubmitQuizRequest(BaseModel):
     quiz_id: str
@@ -94,9 +94,35 @@ class SubmitQuizRequest(BaseModel):
 
 class SettingsRequest(BaseModel):
     gemini_api_key: Optional[str] = None
-    model_name: Optional[str] = "gemini-3.6-flash"
+    model_name: Optional[str] = "gemini-2.5-flash"
     default_difficulty: Optional[str] = "Orta"
     default_question_count: Optional[int] = 5
+
+def get_effective_api_key(explicit_key: Optional[str] = None) -> str:
+    """
+    API anahtarı öncelik sırası:
+    1. İstekten açıkça gelen (explicit_key)
+    2. Render.com / .env ortam değişkeni (os.environ['GEMINI_API_KEY'])
+    3. Veritabanından gelen (geçersiz test tokenları hariç)
+    """
+    if explicit_key and len(explicit_key.strip()) > 10:
+        return explicit_key.strip()
+    env_key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if env_key and len(env_key) > 10:
+        return env_key
+    db_key = get_setting("gemini_api_key", "").strip()
+    if db_key and len(db_key) > 10 and not db_key.startswith("AQ."):
+        return db_key
+    return env_key or db_key
+
+def get_effective_model_name(explicit_model: Optional[str] = None) -> str:
+    """
+    Model adı doğrulama ve temizleme (Geçersiz 3.6 referanslarını 2.5-flash'a yönlendirir).
+    """
+    model = (explicit_model or get_setting("model_name") or "gemini-2.5-flash").replace("models/", "").strip()
+    if not model or "3.6" in model or "3." in model:
+        return "gemini-2.5-flash"
+    return model
 
 # ----------------- ENDPOINT'LER -----------------
 
@@ -206,10 +232,8 @@ async def generate_quiz_endpoint(req: GenerateQuizRequest):
     full_context = "\n\n".join(content_chunks)
     
     # API Anahtarını kontrol et (istekten, veritabanından veya env'den)
-    api_key = req.api_key or get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = req.model_name or get_setting("model_name", "gemini-3.6-flash")
-    if not model_name or "2.5" in model_name or "1.5" in model_name:
-        model_name = "gemini-3.6-flash"
+    api_key = get_effective_api_key(req.api_key)
+    model_name = get_effective_model_name(req.model_name)
     
     quiz_data = None
     question_type = req.question_type or "mcq"
@@ -339,17 +363,14 @@ def list_results():
 
 @app.get("/api/settings")
 def get_app_settings():
-    raw_key = get_setting("gemini_api_key", "")
+    raw_key = get_effective_api_key()
     masked_key = ""
     if raw_key and len(raw_key) > 8:
         masked_key = raw_key[:4] + "..." + raw_key[-4:]
     elif raw_key:
         masked_key = "********"
         
-    stored_model = get_setting("model_name", "gemini-3.6-flash")
-    if "2.5" in stored_model or "1.5" in stored_model:
-        stored_model = "gemini-3.6-flash"
-        set_setting("model_name", "gemini-3.6-flash")
+    stored_model = get_effective_model_name()
         
     return {
         "has_api_key": bool(raw_key),
@@ -525,8 +546,8 @@ async def chat_endpoint(req: ChatMessageRequest):
     context_text = prepare_chat_context(doc_id=req.doc_id, user_message=user_msg)
     
     # 4. API Anahtarı ve Model belirleme
-    api_key = get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = get_setting("model_name", "gemini-3.6-flash")
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
     
     assistant_response = ""
     if api_key and len(api_key.strip()) > 10:
@@ -586,8 +607,8 @@ async def solve_anamnesis_endpoint(req: AnamnesisSolveRequest):
     """
     Anamnez fotoğrafını veya metnini TR/DE dillerinde çözer ve gerekçelendirir.
     """
-    api_key = get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = get_setting("model_name", "gemini-3.6-flash")
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
     language = req.language or "tr"
     
     extra_context = ""
@@ -623,8 +644,8 @@ async def translate_analysis_endpoint(req: TranslateAnalysisRequest):
     """
     Mevcut vaka raporunu tek tıkla diğer dile (Almanca <-> Türkçe) çevirir.
     """
-    api_key = get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = get_setting("model_name", "gemini-3.6-flash")
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
     if api_key and len(api_key.strip()) > 10:
         try:
             translated = await translate_anamnesis_analysis(
@@ -646,8 +667,8 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
     """
     Yüklü PDF'lerden veya Web/Tıp Literatüründen 12 soruluk klinik vaka senaryosu üretir.
     """
-    api_key = get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = get_setting("model_name", "gemini-3.6-flash")
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
     language = req.language or "tr"
     topic = req.topic or "Klinik Acil Vaka"
     source_type = req.source_type or "pdf"
@@ -700,8 +721,8 @@ async def evaluate_case_exam_endpoint(req: EvaluateCaseExamRequest):
     Kullanıcının 12 soruya verdiği yazılı veya el yazısı fotoğraflarındaki yanıtları
     Alman DGAI/ATA standartlarında puanlar, geçmiş vaka performansıyla kıyaslayarak sık tekrarlanan hataları ve gelişimi raporlar.
     """
-    api_key = get_setting("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-    model_name = get_setting("model_name", "gemini-3.6-flash")
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
     language = req.language or "tr"
     
     # Öğrencinin geçmiş 10 vaka performansını yükle

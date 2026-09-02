@@ -109,8 +109,8 @@ async def solve_anamnesis_case(
     """
     system_prompt = ANAMNESIS_PROMPT_DE if language.lower() == "de" else ANAMNESIS_PROMPT_TR
     clean_model = model_name.replace("models/", "").strip()
-    if "2.5" in clean_model or "1.5" in clean_model:
-        clean_model = "gemini-3.6-flash"
+    if not clean_model or "3.6" in clean_model or "3." in clean_model:
+        clean_model = "gemini-2.5-flash"
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
@@ -258,8 +258,8 @@ async def translate_anamnesis_analysis(
     """
     is_de = target_language.lower() == "de"
     clean_model = model_name.replace("models/", "").strip()
-    if "2.5" in clean_model or "1.5" in clean_model:
-        clean_model = "gemini-3.6-flash"
+    if not clean_model or "3.6" in clean_model or "3." in clean_model:
+        clean_model = "gemini-2.5-flash"
 
     if is_de:
         prompt = f"""Du bist ein hochqualifizierter medizinischer Fachübersetzer und Prüfer für deutsche Approbationsprüfungen (FSP / Kenntnisprüfung).

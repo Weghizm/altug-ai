@@ -167,8 +167,8 @@ async def call_gemini_api(prompt: str, api_key: str, model_name: str = "gemini-3
     Google Gemini REST API üzerinden çağrı yapar.
     """
     clean_model = model_name.replace("models/", "").strip()
-    if "2.5" in clean_model or "1.5" in clean_model:
-        clean_model = "gemini-3.6-flash"
+    if not clean_model or "3.6" in clean_model or "3." in clean_model:
+        clean_model = "gemini-2.5-flash"
         
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
