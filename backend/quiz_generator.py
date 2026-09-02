@@ -168,51 +168,41 @@ async def call_gemini_api(prompt: str, api_key: str, model_name: str = "gemini-3
     """
     clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
         
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
+    models_to_try = [clean_model]
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
     headers = {"Content-Type": "application/json"}
-    
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ],
+        "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {
             "temperature": 0.3,
             "responseMimeType": "application/json"
         }
     }
     
+    last_error = None
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        
-        if response.status_code != 200:
-            error_msg = response.text
+        for current_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
             try:
-                err_json = response.json()
-                if "error" in err_json and "message" in err_json["error"]:
-                    error_msg = err_json["error"]["message"]
-            except Exception:
-                pass
-            raise RuntimeError(f"Gemini API Hatası ({response.status_code}): {error_msg}")
-            
-        data = response.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            raise RuntimeError("Gemini modelinden geçerli bir yanıt adayı dönmedi.")
-            
-        parts = candidates[0].get("content", {}).get("parts", [])
-        if not parts:
-            raise RuntimeError("Model boş bir yanıt içeriği üretti.")
-            
-        raw_text = parts[0].get("text", "").strip()
-        
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        return json.loads(clean_text)
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            raw_text = parts[0].get("text", "").strip()
+                            clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                            clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                            return json.loads(clean_text)
+                last_error = f"Model {current_model} Hatası ({response.status_code}): {response.text}"
+            except Exception as e:
+                last_error = f"Model {current_model} Hatası: {str(e)}"
+
+    raise RuntimeError(last_error or "Soru üretimi için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
 def generate_mock_quiz(
     topic_title: str,

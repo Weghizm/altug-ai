@@ -139,6 +139,14 @@ Konu: {topic}
             user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
         user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
 
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
+    headers = {"Content-Type": "application/json"}
+    
+    models_to_try = [clean_model]
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
     payload = {
         "contents": [{"parts": [{"text": user_text}]}],
         "generationConfig": {
@@ -147,33 +155,42 @@ Konu: {topic}
         }
     }
 
+    last_error = None
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise RuntimeError(f"Vaka Üretim Hatası ({response.status_code}): {response.text}")
-            
-        data = response.json()
-        parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-        raw_text = parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        result = json.loads(clean_text)
-        result["case_id"] = str(uuid.uuid4())
-        result["source_type"] = source_type
+        for current_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
+            try:
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            raw_text = parts[0].get("text", "").strip()
+                            clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                            clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                            
+                            result = json.loads(clean_text)
+                            result["case_id"] = str(uuid.uuid4())
+                            result["source_type"] = source_type
 
-        # Geriye dönük uyumluluk için seçili dili ana alanlara da kopyala
-        active_lang_key = "german" if language.lower() == "de" else "turkish"
-        active_obj = result.get(active_lang_key) or result.get("german") or result.get("turkish") or {}
-        
-        result["title"] = active_obj.get("title", topic)
-        result["patient_profile"] = active_obj.get("patient_profile", {})
-        result["patient_story"] = active_obj.get("patient_story", "")
-        result["vital_and_findings"] = active_obj.get("vital_and_findings", "")
-        result["anamnesis_summary"] = active_obj.get("anamnesis_summary", "")
-        result["questions"] = active_obj.get("questions", [])
-        
-        return result
+                            active_lang_key = "german" if language.lower() == "de" else "turkish"
+                            active_obj = result.get(active_lang_key) or result.get("german") or result.get("turkish") or {}
+                            
+                            result["title"] = active_obj.get("title", topic)
+                            result["patient_profile"] = active_obj.get("patient_profile", {})
+                            result["patient_story"] = active_obj.get("patient_story", "")
+                            result["vital_and_findings"] = active_obj.get("vital_and_findings", "")
+                            result["anamnesis_summary"] = active_obj.get("anamnesis_summary", "")
+                            result["questions"] = active_obj.get("questions", [])
+                            
+                            return result
+                last_error = f"Model {current_model} ({response.status_code}): {response.text}"
+            except Exception as e:
+                last_error = f"Model {current_model} Hatası: {str(e)}"
+                
+    raise RuntimeError(last_error or "Vaka üretimi için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
 async def evaluate_user_case_answers(
     case_data: Dict[str, Any],
@@ -373,7 +390,11 @@ Yanıtını SADECE aşağıdaki saf JSON formatında ver:
                     }
                 })
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
+    models_to_try = [clean_model]
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
     headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": parts}],
@@ -383,18 +404,27 @@ Yanıtını SADECE aşağıdaki saf JSON formatında ver:
         }
     }
 
+    last_error = None
     async with httpx.AsyncClient(timeout=150.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise RuntimeError(f"Değerlendirme API Hatası ({response.status_code}): {response.text}")
-            
-        data = response.json()
-        cand_parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-        raw_text = cand_parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        return json.loads(clean_text)
+        for current_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
+            try:
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        cand_parts = candidates[0].get("content", {}).get("parts", [])
+                        if cand_parts:
+                            raw_text = cand_parts[0].get("text", "").strip()
+                            clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                            clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                            return json.loads(clean_text)
+                last_error = f"Model {current_model} ({response.status_code}): {response.text}"
+            except Exception as e:
+                last_error = f"Model {current_model} Hatası: {str(e)}"
+
+    raise RuntimeError(last_error or "Değerlendirme için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
 def generate_mock_12_case(topic: str = "Akut Koroner Sendrom", language: str = "tr") -> Dict[str, Any]:
     """

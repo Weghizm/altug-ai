@@ -142,6 +142,12 @@ async def solve_anamnesis_case(
             }
         })
 
+    models_to_try = [clean_model]
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
+    headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": parts}],
         "generationConfig": {
@@ -150,33 +156,27 @@ async def solve_anamnesis_case(
         }
     }
 
+    last_error = None
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        
-        if response.status_code != 200:
-            error_msg = response.text
+        for current_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
             try:
-                err_json = response.json()
-                if "error" in err_json and "message" in err_json["error"]:
-                    error_msg = err_json["error"]["message"]
-            except Exception:
-                pass
-            raise RuntimeError(f"Gemini Anamnez Çözüm Hatası ({response.status_code}): {error_msg}")
-            
-        data = response.json()
-        candidates = data.get("candidates", [])
-        if not candidates:
-            raise RuntimeError("Yapay zekadan geçerli bir çözüm dönmedi.")
-            
-        res_parts = candidates[0].get("content", {}).get("parts", [])
-        if not res_parts:
-            raise RuntimeError("Model boş bir yanıt üretti.")
-            
-        raw_text = res_parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        return json.loads(clean_text)
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        res_parts = candidates[0].get("content", {}).get("parts", [])
+                        if res_parts:
+                            raw_text = res_parts[0].get("text", "").strip()
+                            clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                            clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                            return json.loads(clean_text)
+                last_error = f"Model {current_model} Hatası ({response.status_code}): {response.text}"
+            except Exception as e:
+                last_error = f"Model {current_model} Hatası: {str(e)}"
+
+    raise RuntimeError(last_error or "Anamnez analizi için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
 def generate_mock_anamnesis_solution(language: str = "tr") -> Dict[str, Any]:
     """
@@ -283,7 +283,11 @@ Aşağıdaki klinik vaka analizini eksiksiz, anlaşılır ve Türk tıbbi termin
 Birebir aynı JSON şemasında Türkçe olarak saf JSON ver:
 """
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
+    models_to_try = [clean_model]
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+        if alt not in models_to_try:
+            models_to_try.append(alt)
+
     headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -293,16 +297,25 @@ Birebir aynı JSON şemasında Türkçe olarak saf JSON ver:
         }
     }
 
+    last_error = None
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        if response.status_code != 200:
-            raise RuntimeError(f"Çeviri API Hatası ({response.status_code}): {response.text}")
-            
-        data = response.json()
-        parts = data.get("candidates", [])[0].get("content", {}).get("parts", [])
-        raw_text = parts[0].get("text", "").strip()
-        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
-        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
-        
-        return json.loads(clean_text)
+        for current_model in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
+            try:
+                response = await client.post(url, headers=headers, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            raw_text = parts[0].get("text", "").strip()
+                            clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+                            clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+                            return json.loads(clean_text)
+                last_error = f"Model {current_model} Hatası ({response.status_code}): {response.text}"
+            except Exception as e:
+                last_error = f"Model {current_model} Hatası: {str(e)}"
+
+    raise RuntimeError(last_error or "Çeviri için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
