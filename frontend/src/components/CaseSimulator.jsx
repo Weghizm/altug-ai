@@ -1066,7 +1066,28 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
                   {/* Yükleme ve Doğrudan Kamera Butonları (3 Seçenek) */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    {/* 1. Canlı Kamera Vizörü */}
+                    
+                    {/* 1. Doğrudan Telefon Kamerasını Aç (Native - %100 Çalışır) */}
+                    <label className="border-2 border-dashed border-teal-500/50 hover:border-teal-400 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-teal-950/20 hover:bg-teal-950/30 transition-all group shadow-md">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleImageUpload}
+                        className="sr-only"
+                      />
+                      <div className="w-11 h-11 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 group-hover:scale-110 transition-transform mb-2">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-teal-200">
+                        {lang === 'de' ? '📷 Smartphone-Kamera' : '📷 Telefon Kamerası (HD)'}
+                      </span>
+                      <span className="text-[10px] text-teal-300/70 mt-0.5">
+                        {lang === 'de' ? 'Kamera-App öffnen & Foto aufnehmen' : 'Telefonun kendi kamerasını açar'}
+                      </span>
+                    </label>
+
+                    {/* 2. Canlı Kamera Vizörü (Uygulama İçi) */}
                     <button
                       type="button"
                       onClick={() => startLiveCamera()}
@@ -1076,36 +1097,22 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                         <Camera className="w-5 h-5" />
                       </div>
                       <span className="text-xs sm:text-sm font-bold text-white">
-                        {lang === 'de' ? '📸 Live-Kamera' : '📸 Canlı Kamera'}
+                        {lang === 'de' ? '📸 Live-Kamera' : '📸 Canlı Vizör'}
                       </span>
                       <span className="text-[10px] text-purple-300/70 mt-0.5">
-                        {lang === 'de' ? 'Im Vollbild-Sucher aufnehmen' : 'Tam ekran canlı vizörle çek'}
-                      </span>
-                    </button>
-
-                    {/* 2. Doğrudan Telefon Kamerasını Aç (Native) */}
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      className="border-2 border-dashed border-teal-500/50 hover:border-teal-400 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-teal-950/20 hover:bg-teal-950/30 transition-all group shadow-md"
-                    >
-                      <div className="w-11 h-11 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 group-hover:scale-110 transition-transform mb-2">
-                        <Smartphone className="w-5 h-5" />
-                      </div>
-                      <span className="text-xs sm:text-sm font-bold text-teal-200">
-                        {lang === 'de' ? '📷 Smartphone-Kamera' : '📷 Telefon Kamerası'}
-                      </span>
-                      <span className="text-[10px] text-teal-300/70 mt-0.5">
-                        {lang === 'de' ? 'Standard-Kamera-App öffnen' : 'Telefonun kendi kamerasını aç'}
+                        {lang === 'de' ? 'Im Vollbild-Sucher aufnehmen' : 'Ekranda canlı vizörle çek'}
                       </span>
                     </button>
 
                     {/* 3. Galeriden / Dosyalardan Seç */}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md"
-                    >
+                    <label className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        className="sr-only"
+                      />
                       <div className="w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
                         <UploadCloud className="w-5 h-5" />
                       </div>
@@ -1115,7 +1122,8 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                       <span className="text-[10px] text-slate-500 mt-0.5">
                         {lang === 'de' ? '1-4 Seiten hochladen' : '1-4 Sayfa çoklu seç'}
                       </span>
-                    </button>
+                    </label>
+
                   </div>
 
                   {/* Yüklenen Fotoğrafların Önizleme Listesi */}
