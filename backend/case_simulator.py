@@ -143,7 +143,7 @@ Konu: {topic}
     headers = {"Content-Type": "application/json"}
     
     models_to_try = [clean_model]
-    for alt in ["gemini-3.7-flash", "gemini-3.6-pro", "gemini-3.5-flash", "gemini-1.5-flash"]:
+    for alt in ["gemini-3.7-flash", "gemini-3.6-pro"]:
         if alt not in models_to_try:
             models_to_try.append(alt)
 
@@ -151,12 +151,13 @@ Konu: {topic}
         "contents": [{"parts": [{"text": user_text}]}],
         "generationConfig": {
             "temperature": 0.3,
+            "maxOutputTokens": 8192,
             "responseMimeType": "application/json"
         }
     }
 
     last_error = None
-    async with httpx.AsyncClient(timeout=120.0) as client:
+    async with httpx.AsyncClient(timeout=45.0) as client:
         for current_model in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
             try:
@@ -171,7 +172,17 @@ Konu: {topic}
                             clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
                             clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
                             
-                            result = json.loads(clean_text)
+                            # JSON parse
+                            try:
+                                result = json.loads(clean_text)
+                            except Exception:
+                                s = clean_text.find('{')
+                                e = clean_text.rfind('}')
+                                if s != -1 and e != -1:
+                                    result = json.loads(clean_text[s:e+1])
+                                else:
+                                    raise
+                                    
                             result["case_id"] = str(uuid.uuid4())
                             result["source_type"] = source_type
 
