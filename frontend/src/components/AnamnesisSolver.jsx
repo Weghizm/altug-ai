@@ -358,34 +358,65 @@ ${analysisResult.clinical_pearls}
                   ))}
 
                   {/* Daha Fazla Görsel Ekle Butonu */}
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-24 sm:h-28 rounded-xl border-2 border-dashed border-slate-800 hover:border-teal-500/60 bg-slate-900/40 hover:bg-slate-900 flex flex-col items-center justify-center space-y-1 text-slate-400 hover:text-teal-300 transition-all cursor-pointer"
-                  >
+                  <label className="h-24 sm:h-28 rounded-xl border-2 border-dashed border-slate-800 hover:border-teal-500/60 bg-slate-900/40 hover:bg-slate-900 flex flex-col items-center justify-center space-y-1 text-slate-400 hover:text-teal-300 transition-all cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        if (e.target.files) handleImageFiles(e.target.files);
+                      }}
+                      className="sr-only"
+                    />
                     <Plus className="w-5 h-5" />
-                    <span className="text-[11px] font-semibold">{lang === 'de' ? '+ Weiteres Bild' : '+ Görsel Ekle'}</span>
-                  </button>
+                    <span className="text-[11px] font-semibold">{lang === 'de' ? '+ Weiteres Bild' : '+ Görsel / Kamera'}</span>
+                  </label>
                 </div>
               </div>
             ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                onPaste={handlePaste}
-                tabIndex={0}
-                className="border-2 border-dashed border-slate-700 hover:border-teal-500/60 bg-slate-950/40 hover:bg-slate-950/80 rounded-2xl p-6 text-center cursor-pointer transition-all focus:outline-none focus:border-teal-400"
-              >
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-400 flex items-center justify-center border border-teal-500/20">
-                    <Images className="w-6 h-6" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 1. Kamerayı Aç */}
+                <label className="border-2 border-dashed border-teal-500/50 hover:border-teal-400 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-teal-950/20 hover:bg-teal-950/30 transition-all group shadow-md">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={(e) => {
+                      if (e.target.files) handleImageFiles(e.target.files);
+                    }}
+                    className="sr-only"
+                  />
+                  <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 group-hover:scale-110 transition-transform mb-2">
+                    <Camera className="w-6 h-6" />
                   </div>
-                  <div className="text-sm font-semibold text-slate-200">
-                    {t.pasteOrUpload}
+                  <span className="text-sm font-bold text-teal-200">
+                    {lang === 'de' ? '📷 Kamera öffnen' : '📷 Telefon Kamerası ile Çek'}
+                  </span>
+                  <span className="text-[11px] text-teal-300/70 mt-0.5">
+                    {lang === 'de' ? 'Dokument / Anamnese fotografieren' : 'Belgeyi veya el yazısını hemen çekin'}
+                  </span>
+                </label>
+
+                {/* 2. Galeriden Seç */}
+                <label className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      if (e.target.files) handleImageFiles(e.target.files);
+                    }}
+                    className="sr-only"
+                  />
+                  <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
+                    <UploadCloud className="w-6 h-6" />
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Birden fazla anamnez sayfası, EKG veya tahlil fotoğrafını birlikte seçebilir veya peş peşe yapıştırabilirsiniz (Ctrl+V).
-                  </p>
-                </div>
+                  <span className="text-sm font-bold text-slate-200">
+                    {lang === 'de' ? '🖼️ Galerie / Dateien' : '🖼️ Galeriden / Dosyalardan Seç'}
+                  </span>
+                  <span className="text-[11px] text-slate-500 mt-0.5">
+                    {lang === 'de' ? 'Mehrere Bilder hochladen' : 'Çoklu görsel veya PDF fotoğrafı yükle'}
+                  </span>
+                </label>
               </div>
             )}
           </div>
