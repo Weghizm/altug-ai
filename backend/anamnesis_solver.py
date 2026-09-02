@@ -1,8 +1,9 @@
+from __future__ import annotations
 import os
 import re
 import json
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 ANAMNESIS_PROMPT_TR = """Sen uzman bir tıp akademisyeni ve klinik vaka değerlendiricisisin.
 Sana verilen hasta anamnezini, hekim notunu, epikriz belgesini, soru görselini veya klinik vaka metnini titizlikle ve sistematik olarak çöz ve gerekçelendir.
