@@ -146,17 +146,20 @@ Konu: {topic}
     if "gemini-3.7-flash" not in models_to_try:
         models_to_try.append("gemini-3.7-flash")
 
+    # Kısa, net ve yüksek kaliteli vaka talimatı
+    speed_directive = "\n\n### PRÄZISION & GESCHWINDIGKEIT:\nAntworte fachlich präzise und vollständig nach DGAI/RKI-Standard, ohne unnötige ausschweifende Fülltexte, damit die Generierung schnell abgeschlossen wird.\n"
+
     payload = {
-        "contents": [{"parts": [{"text": user_text}]}],
+        "contents": [{"parts": [{"text": user_text + speed_directive}]}],
         "generationConfig": {
-            "temperature": 0.3,
+            "temperature": 0.2,
             "maxOutputTokens": 8192,
             "responseMimeType": "application/json"
         }
     }
 
     last_error = None
-    async with httpx.AsyncClient(timeout=45.0) as client:
+    async with httpx.AsyncClient(timeout=120.0) as client:
         for current_model in models_to_try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{current_model}:generateContent?key={api_key}"
             try:
@@ -196,9 +199,10 @@ Konu: {topic}
                             result["questions"] = active_obj.get("questions", [])
                             
                             return result
-                last_error = f"Model {current_model} ({response.status_code}): {response.text}"
+                last_error = f"Model {current_model} HTTP {response.status_code}: {response.text}"
             except Exception as e:
-                last_error = f"Model {current_model} Hatası: {str(e)}"
+                err_detail = str(e) if str(e) else repr(e)
+                last_error = f"Model {current_model} Hatası ({type(e).__name__}): {err_detail}"
                 
     raise RuntimeError(last_error or "Vaka üretimi için denenen tüm Gemini modellerinden yanıt alınamadı.")
 
