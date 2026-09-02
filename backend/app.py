@@ -117,12 +117,10 @@ def get_effective_api_key(explicit_key: Optional[str] = None) -> str:
 
 def get_effective_model_name(explicit_model: Optional[str] = None) -> str:
     """
-    Model adı doğrulama ve temizleme (Geçersiz 3.6 referanslarını 2.5-flash'a yönlendirir).
+    Model adı temizleme ve doğrulama.
     """
-    model = (explicit_model or get_setting("model_name") or "gemini-2.5-flash").replace("models/", "").strip()
-    if not model or "3.6" in model or "3." in model:
-        return "gemini-2.5-flash"
-    return model
+    model = (explicit_model or get_setting("model_name") or "gemini-3.6-flash").replace("models/", "").strip()
+    return model if model else "gemini-3.6-flash"
 
 # ----------------- ENDPOINT'LER -----------------
 

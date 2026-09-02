@@ -105,9 +105,7 @@ async def generate_12_question_case(
     """
     Gemini 3.6 Flash ile Yüklü PDF'lerden veya Web'den 4 SAYFALIK İKİ DİLLİ (Almanca + Türkçe) klinik vaka kitapçığı üretir.
     """
-    clean_model = model_name.replace("models/", "").strip()
-    if not clean_model or "3.6" in clean_model or "3." in clean_model:
-        clean_model = "gemini-2.5-flash"
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
@@ -197,9 +195,7 @@ async def evaluate_user_case_answers(
         active_case = case_data.get("german") or case_data.get("turkish") or case_data
 
     user_answers = user_answers or {}
-    clean_model = model_name.replace("models/", "").strip()
-    if not clean_model or "3.6" in clean_model or "3." in clean_model:
-        clean_model = "gemini-2.5-flash"
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
 
     # Geçmiş vaka hafızası özeti
     history_context = ""

@@ -108,9 +108,7 @@ async def solve_anamnesis_case(
     Anamnez görsellerini (tek veya çoklu) veya metnini Gemini 3.6 Flash ile derinlemesine analiz eder (TR / DE).
     """
     system_prompt = ANAMNESIS_PROMPT_DE if language.lower() == "de" else ANAMNESIS_PROMPT_TR
-    clean_model = model_name.replace("models/", "").strip()
-    if not clean_model or "3.6" in clean_model or "3." in clean_model:
-        clean_model = "gemini-2.5-flash"
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
@@ -257,9 +255,7 @@ async def translate_anamnesis_analysis(
     Mevcut vaka çözümünü tek tıkla diğer dile (Almanca <-> Türkçe) eksiksiz ve terminolojiye uygun çevirir.
     """
     is_de = target_language.lower() == "de"
-    clean_model = model_name.replace("models/", "").strip()
-    if not clean_model or "3.6" in clean_model or "3." in clean_model:
-        clean_model = "gemini-2.5-flash"
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
 
     if is_de:
         prompt = f"""Du bist ein hochqualifizierter medizinischer Fachübersetzer und Prüfer für deutsche Approbationsprüfungen (FSP / Kenntnisprüfung).

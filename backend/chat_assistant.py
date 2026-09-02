@@ -73,9 +73,7 @@ async def call_gemini_chat(
     """
     Gemini 3.6 Flash ile çok turlu ve çoklu görsel destekli (multimodal) sohbet yanıtı üretir.
     """
-    clean_model = model_name.replace("models/", "").strip()
-    if not clean_model or "3.6" in clean_model or "3." in clean_model:
-        clean_model = "gemini-2.5-flash"
+    clean_model = (model_name or "gemini-3.6-flash").replace("models/", "").strip()
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}

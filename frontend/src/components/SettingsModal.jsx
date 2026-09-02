@@ -3,7 +3,7 @@ import { Settings, Key, Sparkles, ExternalLink, Check, X, ShieldAlert, Cpu } fro
 
 export default function SettingsModal({ isOpen, onClose, settings, onSaveSettings }) {
   const [apiKey, setApiKey] = useState('');
-  const [modelName, setModelName] = useState(settings?.model_name || 'gemini-2.5-flash');
+  const [modelName, setModelName] = useState(settings?.model_name || 'gemini-3.6-flash');
   const [defaultDifficulty, setDefaultDifficulty] = useState(settings?.default_difficulty || 'Orta');
   const [defaultQuestionCount, setDefaultQuestionCount] = useState(settings?.default_question_count || 5);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -96,9 +96,9 @@ export default function SettingsModal({ isOpen, onClose, settings, onSaveSetting
               onChange={(e) => setModelName(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
             >
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Önerilen - En Hızlı & Yüksek Doğruluk)</option>
-              <option value="gemini-2.5-pro">Gemini 2.5 Pro (Çok Ayrıntılı Klinik Akıl Yürütme)</option>
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Hızlı & Kararlı)</option>
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash (Önerilen - En Hızlı & Yüksek Doğruluk)</option>
+              <option value="gemini-3.6-pro">Gemini 3.6 Pro (Çok Ayrıntılı Klinik Akıl Yürütme)</option>
+              <option value="gemini-3.7-flash">Gemini 3.7 Flash (En Yeni Nesil)</option>
             </select>
           </div>
 
