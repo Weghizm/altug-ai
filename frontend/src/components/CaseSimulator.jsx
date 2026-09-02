@@ -85,10 +85,20 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
   const [errorMessage, setErrorMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
 
+  // Canlı Kamera Açıldığında Video Akışını Bağla
+  useEffect(() => {
+    if (isLiveCameraOpen && streamRef.current && videoRef.current) {
+      const video = videoRef.current;
+      video.srcObject = streamRef.current;
+      video.onloadedmetadata = () => {
+        video.play().catch((e) => console.log('Autoplay error:', e));
+      };
+    }
+  }, [isLiveCameraOpen]);
+
   // Canlı Kamerayı Başlat
   const startLiveCamera = async (facing = cameraFacing) => {
     setCameraError('');
-    setIsLiveCameraOpen(true);
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
@@ -96,21 +106,25 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
       
       const constraints = {
         video: {
-          facingMode: { ideal: facing },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
+          facingMode: facing === 'user' ? 'user' : 'environment'
         },
         audio: false
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      setIsLiveCameraOpen(true);
+
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current.play().catch((e) => console.log('Play err:', e));
+          };
+        }
+      }, 100);
     } catch (err) {
-      console.warn('Canlı kamera akışı açılamadı, doğrudan dosya seçiciye yönlendiriliyor:', err);
-      // İzin verilmediyse veya desteklenmiyorsa standart kamera inputunu tıkla
+      console.warn('Canlı kamera akışı açılamadı, sistem kamerasına geçiliyor:', err);
       stopLiveCamera();
       if (cameraInputRef.current) {
         cameraInputRef.current.click();
@@ -1050,39 +1064,56 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                     className="hidden"
                   />
 
-                  {/* Yükleme ve Doğrudan Kamera Butonları */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* 1. Canlı Kamerayı Aç / Fotoğraf Çek */}
+                  {/* Yükleme ve Doğrudan Kamera Butonları (3 Seçenek) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* 1. Canlı Kamera Vizörü */}
                     <button
                       type="button"
                       onClick={() => startLiveCamera()}
-                      className="border-2 border-dashed border-purple-500/50 hover:border-purple-400 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-purple-950/20 hover:bg-purple-950/30 transition-all group shadow-md"
+                      className="border-2 border-dashed border-purple-500/50 hover:border-purple-400 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-purple-950/20 hover:bg-purple-950/30 transition-all group shadow-md"
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 group-hover:scale-110 transition-transform mb-2">
-                        <Camera className="w-6 h-6" />
+                      <div className="w-11 h-11 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 group-hover:scale-110 transition-transform mb-2">
+                        <Camera className="w-5 h-5" />
                       </div>
-                      <span className="text-sm font-bold text-white">
-                        {lang === 'de' ? '📸 Kamera öffnen & Foto aufnehmen' : '📸 Kamerayı Aç & Fotoğraf Çek'}
+                      <span className="text-xs sm:text-sm font-bold text-white">
+                        {lang === 'de' ? '📸 Live-Kamera' : '📸 Canlı Kamera'}
                       </span>
-                      <span className="text-[11px] text-purple-300/70 mt-0.5">
-                        {lang === 'de' ? 'Direkt mit dem Smartphone fotografieren' : 'Uygulama içinden canlı kamerayla çekin'}
+                      <span className="text-[10px] text-purple-300/70 mt-0.5">
+                        {lang === 'de' ? 'Im Vollbild-Sucher aufnehmen' : 'Tam ekran canlı vizörle çek'}
                       </span>
                     </button>
 
-                    {/* 2. Galeriden / Dosyalardan Seç */}
+                    {/* 2. Doğrudan Telefon Kamerasını Aç (Native) */}
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="border-2 border-dashed border-teal-500/50 hover:border-teal-400 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-teal-950/20 hover:bg-teal-950/30 transition-all group shadow-md"
+                    >
+                      <div className="w-11 h-11 rounded-2xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-300 group-hover:scale-110 transition-transform mb-2">
+                        <Smartphone className="w-5 h-5" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-teal-200">
+                        {lang === 'de' ? '📷 Smartphone-Kamera' : '📷 Telefon Kamerası'}
+                      </span>
+                      <span className="text-[10px] text-teal-300/70 mt-0.5">
+                        {lang === 'de' ? 'Standard-Kamera-App öffnen' : 'Telefonun kendi kamerasını aç'}
+                      </span>
+                    </button>
+
+                    {/* 3. Galeriden / Dosyalardan Seç */}
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-6 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md"
+                      className="border-2 border-dashed border-slate-700 hover:border-slate-500 rounded-3xl p-5 flex flex-col items-center justify-center text-center cursor-pointer bg-slate-950/60 hover:bg-slate-900/60 transition-all group shadow-md"
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
-                        <UploadCloud className="w-6 h-6" />
+                      <div className="w-11 h-11 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 group-hover:scale-110 transition-transform mb-2">
+                        <UploadCloud className="w-5 h-5" />
                       </div>
-                      <span className="text-sm font-bold text-slate-200">
-                        {lang === 'de' ? '🖼️ Aus Galerie / Dateien wählen' : '🖼️ Galeriden / Dosyalardan Seç'}
+                      <span className="text-xs sm:text-sm font-bold text-slate-200">
+                        {lang === 'de' ? '🖼️ Galerie / Dateien' : '🖼️ Galeri / Dosyalar'}
                       </span>
-                      <span className="text-[11px] text-slate-500 mt-0.5">
-                        {lang === 'de' ? '1-4 Seiten gleichzeitig hochladen' : '1-4 Sayfa • Çoklu seçim yapabilirsiniz'}
+                      <span className="text-[10px] text-slate-500 mt-0.5">
+                        {lang === 'de' ? '1-4 Seiten hochladen' : '1-4 Sayfa çoklu seç'}
                       </span>
                     </button>
                   </div>
