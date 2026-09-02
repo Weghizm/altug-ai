@@ -140,7 +140,7 @@ Konu: {topic}
             user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
         user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
 
-    clean_model = "gemini-3.6-flash"
+    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     
@@ -393,7 +393,7 @@ Yanıtını SADECE aşağıdaki saf JSON formatında ver:
                     }
                 })
 
-    clean_model = "gemini-3.6-flash"
+    clean_model = (model_name or "gemini-2.0-flash").replace("models/", "").strip()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     payload = {

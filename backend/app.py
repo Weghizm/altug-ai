@@ -94,7 +94,7 @@ class SubmitQuizRequest(BaseModel):
 
 class SettingsRequest(BaseModel):
     gemini_api_key: Optional[str] = None
-    model_name: Optional[str] = "gemini-3.6-flash"
+    model_name: Optional[str] = "gemini-2.0-flash"
     default_difficulty: Optional[str] = "Orta"
     default_question_count: Optional[int] = 5
 
@@ -120,8 +120,8 @@ def get_effective_model_name(explicit_model: Optional[str] = None) -> str:
     """
     Model adı temizleme ve doğrulama.
     """
-    model = (explicit_model or get_setting("model_name") or "gemini-3.6-flash").replace("models/", "").strip()
-    return model if model else "gemini-3.6-flash"
+    model = (explicit_model or get_setting("model_name") or "gemini-2.0-flash").replace("models/", "").strip()
+    return model if model else "gemini-2.0-flash"
 
 # ----------------- ENDPOINT'LER -----------------
 

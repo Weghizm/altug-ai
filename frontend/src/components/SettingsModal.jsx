@@ -3,7 +3,7 @@ import { Settings, Key, Sparkles, ExternalLink, Check, X, ShieldAlert, Cpu } fro
 
 export default function SettingsModal({ isOpen, onClose, settings, onSaveSettings }) {
   const [apiKey, setApiKey] = useState('');
-  const [modelName, setModelName] = useState(settings?.model_name || 'gemini-3.6-flash');
+  const [modelName, setModelName] = useState(settings?.model_name || 'gemini-2.0-flash');
   const [defaultDifficulty, setDefaultDifficulty] = useState(settings?.default_difficulty || 'Orta');
   const [defaultQuestionCount, setDefaultQuestionCount] = useState(settings?.default_question_count || 5);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -96,8 +96,9 @@ export default function SettingsModal({ isOpen, onClose, settings, onSaveSetting
               onChange={(e) => setModelName(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500"
             >
-              <option value="gemini-3.6-flash">Gemini 3.6 Flash (Önerilen - En Hızlı & Yüksek Doğruluk)</option>
-              <option value="gemini-3.7-flash">Gemini 3.7 Flash (En Yeni & Yüksek Kapasite)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Önerilen - Günlük 1.500 Ücretsiz İstek)</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Kararlı - Günlük 1.500 Ücretsiz İstek)</option>
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash (Deneysel - Günlük 20 İstek Sınırı)</option>
             </select>
           </div>
 
