@@ -1,4 +1,4 @@
-﻿@echo off
+@echo off
 chcp 65001 >nul
 title GitHub a Yukleme
 color 0A
@@ -7,6 +7,10 @@ echo =======================================================================
 echo          ALTUG AI - GITHUB A OTOMATIK YUKLEME
 echo =======================================================================
 echo.
+echo [*] Tum degisiklikler ve dosyalar paketleniyor...
+git add -A
+git commit -m "update: guncellemeler ve duzeltmeler" >nul 2>&1
+
 echo [*] Tum klasorler (backend, frontend, dist) GitHub a yukleniyor...
 echo.
 
