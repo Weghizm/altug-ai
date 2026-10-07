@@ -36,6 +36,14 @@ Erstelle anhand des Themas/Quelltexts ein hochprofessionelles, 4-SEITIGES ZWEISP
 - **SEITE 3 (🇹🇷 TÜRKÇE):** Sayfa 1'in eksiksiz Türkçe karşılığı (Hasta Anamnezi, Muayene, Vital Bulgular + 12 Sınav Sorusu).
 - **SEITE 4 (🇹🇷 TÜRKÇE):** Sayfa 2'nin eksiksiz Türkçe karşılığı (Almanya standartlarında Yapılandırılmış Epikriz & 12 Model Çözüm).
 
+### STRIKTES ZWEISPRACHIGKEITS-GEBOT / %100 İKİ DİLLİLİK VE TÜRKÇE ÇEVİRİ ZORUNLULUĞU (SEHR WICHTIG):
+1. Das JSON MUSS ZWINGEND zwei vollständige Hauptobjekte enthalten: "german" und "turkish".
+2. "german": Auf erstklassigem deutschem Anästhesie- und Medizinniveau (gemäß ATA-OTA-G, DGAI, RKI).
+3. "turkish": MUSS DIE VOLLSTÄNDIGE, AKZENTFREIE UND PRÄZISE TÜRKISCHE ÜBERSETZUNG DES DEUTSCHEN TEILS SEIN!
+   - KESİNLİKLE DİKKAT: "turkish" nesnesinin içerisindeki başlık (title), hasta öyküsü (patient_story), muayene ve vital bulgular (vital_and_findings), anamnez özeti (anamnesis_summary) ve 12 sorunun tamamı ile ideal model çözümleri (ideal_answer) %100 AKICI VE DOĞAL TÜRKÇE OLMALIDIR.
+   - "turkish" NESNESİ İÇİNDE ASLA ALMANCA CÜMLE, ALMANCA SORU VEYA ALMANCA METİN BIRAKILMAYACAKTIR! (Tıbbi terimlerin parantez içi Almanca kısaltmaları hariç).
+   - Kaynak PDF ders kitapları tamamen Almanca olsa dahi, "turkish" bölümünü eksiksiz ve akıcı bir tıp Türkçesiyle çevirerek oluşturacaksın!
+
 ### DIE 6 PFLICHTFRAGEN-KATEGORIEN:
 1. **Hastalığı Açıkla / Krankheit erklären:** Krankheitsbild, Pathophysiologie und spezifische Anästhesierelevanz / perioperative Risiken (ASA-Klasse).
 2. **Tedavi Yöntemleri / Therapiemethoden & Anästhesie:** Narkoseverfahren (TIVA/Balanciert/Regional/LMA), Ablauf des Anästhesiemanagements.
@@ -94,6 +102,134 @@ Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
 }
 """
 
+async def translate_case_exam(
+    case_data: Dict[str, Any],
+    target_language: str = "tr",
+    api_key: str = "",
+    model_name: str = "gemini-2.5-flash"
+) -> Dict[str, Any]:
+    """
+    Klinik vaka sınavını (başlık, hasta hikayesi, vital bulgular, epikriz ve 12 soruyu)
+    Almanca veya Türkçeye eksiksiz ve tıp terminolojisine uygun olarak çevirir ve senkronize eder.
+    """
+    is_tr = target_language.lower() == "tr"
+    source_obj = case_data.get("german" if is_tr else "turkish") or case_data
+    clean_model = (model_name or "gemini-2.5-flash").replace("models/", "").strip()
+    
+    if is_tr:
+        prompt = f"""Sen uzman bir tıp doktoru, anestezi uzmanı ve Alman ATA/Kenntnisprüfung sınavları konusunda yetkin bir tıbbi çevirmensin.
+Aşağıda verilen Alman Anestezi Teknikeri (ATA) Kenntnisprüfung sınav vakasını ve 12 sınav sorusunu EKSİKSİZ VE KUSURSUZ BİR ŞEKİLDE TÜRKÇEYE ÇEVİR.
+
+### ÇEVİRİ VE UYARLAMA KURALLARI:
+1. Başlık (title), hasta profili (patient_profile), hasta öyküsü (patient_story), vital parametreler ve fizik muayene (vital_and_findings), yapılandırılmış anamnez/epikriz özeti (anamnesis_summary) ve 12 sorunun tamamı ile ideal hekim cevaplarını (ideal_answer) %100 akıcı ve anlaşılır Türkçeye çevir.
+2. Tıbbi terimleri netleştir (gerekirse parantez içinde Almanca kısaltmasını bırak: örn: "Hızlı Seri İndüksiyon (RSI)", "Malign Hipertermi (MH)", "4-Göz İlkesi (4-Augen-Prinzip)").
+3. Soru köklerini kesinlikle Almanca bırakma ("Erklären Sie..." -> "...açıklayınız", "Beschreiben Sie..." -> "...tanımlayınız").
+4. 6. Sorudaki farmakoloji tablosunu (ideal_answer) anlaşılır bir Türkçe tablo formatında sun.
+5. ÇIKTI FORMATI: Yanıtını SADECE aşağıdaki saf JSON formatında ver:
+{{
+  "title": "Türkçe Vaka Başlığı",
+  "patient_profile": {{ "age": "...", "gender": "...", "chief_complaint": "..." }},
+  "patient_story": "Türkçe hasta öyküsü...",
+  "vital_and_findings": "Türkçe muayene ve vital bulgular...",
+  "anamnesis_summary": "Türkçe yapılandırılmış epikriz ve anestezi planı...",
+  "questions": [
+    {{
+      "id": 1,
+      "category": "Hastalığı Açıkla",
+      "question": "Türkçe soru metni...",
+      "ideal_answer": "Türkçe ideal hekim model yanıtı...",
+      "max_points": 10
+    }}
+  ]
+}}
+
+### KAYNAK ALMANCA VAKA:
+\"\"\"
+{json.dumps(source_obj, ensure_ascii=False, indent=2)}
+\"\"\"
+"""
+    else:
+        prompt = f"""Du bist Chefarzt der Anästhesiologie und Fachprüfer für die staatliche ATA-Kenntnisprüfung in Deutschland.
+Übersetze und adaptiere den folgenden türkischen klinischen Fall und die 12 Prüfungsfragen vollständig und nach DGAI/RKI-Standard ins DEUTSCHE.
+
+### REGELN:
+1. Übersetze Titel, Patientengeschichte, Vitalparameter, Epikrise und alle 12 Fragen samt Musterlösungen in präzises deutsches Fachvokabular (ATA-OTA-G, DGAI).
+2. Frage 6 muss eine tabellarische Musterlösung haben.
+3. AUSGABEFORMAT: Antworte AUSSCHLIESSLICH im folgenden reinen JSON-Format:
+{{
+  "title": "Deutscher Falltitel",
+  "patient_profile": {{ "age": "...", "gender": "...", "chief_complaint": "..." }},
+  "patient_story": "Deutsche Patientengeschichte...",
+  "vital_and_findings": "Deutsche Vitalparameter und Befunde...",
+  "anamnesis_summary": "Deutsche strukturierte Zusammenfassung...",
+  "questions": [
+    {{
+      "id": 1,
+      "category": "Krankheit erklären",
+      "question": "Deutsche Prüfungsfrage...",
+      "ideal_answer": "Deutsche Musterlösung nach DGAI...",
+      "max_points": 10
+    }}
+  ]
+}}
+
+### TÜRKISCHER QUELLFALL:
+\"\"\"
+{json.dumps(source_obj, ensure_ascii=False, indent=2)}
+\"\"\"
+"""
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.2,
+            "responseMimeType": "application/json"
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        response = await client.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            raise RuntimeError(f"Vaka Çeviri API Hatası ({response.status_code}): {response.text}")
+
+        data = response.json()
+        cands = data.get("candidates", [])
+        if not cands:
+            raise RuntimeError("Çeviri modeli boş yanıt döndürdü.")
+        raw_text = cands[0].get("content", {}).get("parts", [])[0].get("text", "").strip()
+        clean_text = re.sub(r'^```(json)?', '', raw_text, flags=re.MULTILINE)
+        clean_text = re.sub(r'```$', '', clean_text, flags=re.MULTILINE).strip()
+        
+        try:
+            trans_obj = json.loads(clean_text)
+        except Exception:
+            s = clean_text.find('{')
+            e = clean_text.rfind('}')
+            if s != -1 and e != -1:
+                trans_obj = json.loads(clean_text[s:e+1])
+            else:
+                raise
+
+        updated_case = dict(case_data)
+        if is_tr:
+            updated_case["turkish"] = trans_obj
+        else:
+            updated_case["german"] = trans_obj
+
+        # Aktif kök alanlarını da güncelle
+        active_target = "turkish" if is_tr else "german"
+        active_obj = updated_case.get(active_target) or trans_obj
+        updated_case["title"] = active_obj.get("title", updated_case.get("title"))
+        updated_case["patient_profile"] = active_obj.get("patient_profile", updated_case.get("patient_profile", {}))
+        updated_case["patient_story"] = active_obj.get("patient_story", updated_case.get("patient_story", ""))
+        updated_case["vital_and_findings"] = active_obj.get("vital_and_findings", updated_case.get("vital_and_findings", ""))
+        updated_case["anamnesis_summary"] = active_obj.get("anamnesis_summary", updated_case.get("anamnesis_summary", ""))
+        updated_case["questions"] = active_obj.get("questions", updated_case.get("questions", []))
+
+        return updated_case
+
 async def generate_12_question_case(
     topic: str = "",
     context_text: str = "",
@@ -139,8 +275,9 @@ Konu / Başlık: {topic}
         if context_text.strip():
             user_text += f"\nPDF METİN İÇERİKLERİ VE KAYNAKLAR:\n\"\"\"\n{context_text[:16000]}\n\"\"\"\n"
         user_text += "\nLütfen verilen bu PDF kaynaklarındaki (birden fazla kitap varsa her birinden faydalanıp harmanlayarak) klinik, anestezik ve cerrahi bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
+        user_text += "\n\nKRİTİK VE ZORUNLU KURAL: Kaynak PDF kitapları Almanca dilinde olsa dahi, çıktıda yer alan 'turkish' nesnesi içindeki vaka başlığı (title), hasta öyküsü (patient_story), muayene ve vital bulgular (vital_and_findings), epikriz özeti (anamnesis_summary) ve 12 sorunun tamamı ile ideal hekim cevaplarının TAMAMINI %100 AKICI, KUSURSUZ VE ANLAŞILIR TÜRKÇEYE ÇEVİREREK üret. 'turkish' alanı içinde ASLA Almanca soru veya Almanca cümle bırakma!"
 
-    clean_model = "gemini-3.5-flash-lite"
+    clean_model = (model_name or "gemini-2.5-flash").replace("models/", "").strip()
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
     headers = {"Content-Type": "application/json"}
     
@@ -178,8 +315,35 @@ Konu / Başlık: {topic}
                         result["case_id"] = str(uuid.uuid4())
                         result["source_type"] = source_type
 
+                        # Türkçe bölümünün doğrulanması ve gerekirse otomatik onarımı
+                        tr_obj = result.get("turkish") or {}
+                        tr_questions = tr_obj.get("questions") or []
+                        needs_tr_repair = False
+                        
+                        if not tr_obj or not tr_questions or len(tr_questions) < 6:
+                            needs_tr_repair = True
+                        else:
+                            sample_text = (tr_obj.get("patient_story", "") + " " + " ".join(q.get("question", "") for q in tr_questions[:3])).lower()
+                            german_patterns = ["welche", "beschreiben sie", "erklären sie", "der patient", "die patientin", "untersuchung", "frage "]
+                            g_count = sum(1 for p in german_patterns if p in sample_text)
+                            if g_count >= 2 and not any(w in sample_text for w in ["hasta", "hastanın", "nedir", "açıklayınız", "belirtiniz", "yönetimi", "nelerdir"]):
+                                needs_tr_repair = True
+
+                        if needs_tr_repair and result.get("german") and api_key:
+                            try:
+                                repaired_case = await translate_case_exam(
+                                    case_data=result,
+                                    target_language="tr",
+                                    api_key=api_key,
+                                    model_name=clean_model
+                                )
+                                if repaired_case and repaired_case.get("turkish"):
+                                    result["turkish"] = repaired_case["turkish"]
+                            except Exception as repair_err:
+                                print(f"Otomatik Türkçe tamamlama uyarısı: {repair_err}")
+
                         active_lang_key = "german" if language.lower() == "de" else "turkish"
-                        active_obj = result.get(active_lang_key) or result.get("german") or result.get("turkish") or {}
+                        active_obj = result.get(active_lang_key) or result.get("turkish") or result.get("german") or {}
                         
                         result["title"] = active_obj.get("title", topic)
                         result["patient_profile"] = active_obj.get("patient_profile", {})

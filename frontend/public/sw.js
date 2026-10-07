@@ -1,4 +1,4 @@
-const CACHE_NAME = 'altug-ai-cache-v4';
+const CACHE_NAME = 'altug-ai-cache-v5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

@@ -23,7 +23,7 @@ from pdf_processor import extract_pdf_structure, get_topic_content
 from quiz_generator import generate_quiz_prompt, call_gemini_api, generate_mock_quiz
 from chat_assistant import prepare_chat_context, call_gemini_chat, generate_mock_chat_response
 from anamnesis_solver import solve_anamnesis_case, generate_mock_anamnesis_solution, translate_anamnesis_analysis
-from case_simulator import generate_12_question_case, evaluate_user_case_answers, generate_mock_12_case
+from case_simulator import generate_12_question_case, evaluate_user_case_answers, generate_mock_12_case, translate_case_exam
 
 app = FastAPI(title="Altuğ AI - PDF Test & Chat & Anamnesis API", version="1.0.0")
 
@@ -61,6 +61,10 @@ class EvaluateCaseExamRequest(BaseModel):
 class TranslateAnalysisRequest(BaseModel):
     analysis: dict
     target_language: str # "de" | "tr"
+
+class TranslateCaseRequest(BaseModel):
+    case_data: dict
+    target_language: Optional[str] = "tr" # "de" | "tr"
 
 class AnamnesisSolveRequest(BaseModel):
     anamnesis_text: Optional[str] = ""
@@ -765,6 +769,32 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
     else:
         mock_data = generate_mock_12_case(topic=topic, language=language)
         return {"success": True, "case": mock_data, "is_mock": True, "warning": "API Anahtarı bulunamadı (Render Environment veya Ayarlar menüsünden GEMINI_API_KEY tanımlayınız)."}
+
+@app.post("/api/translate-case")
+async def translate_case_endpoint(req: TranslateCaseRequest):
+    """
+    12 soruluk klinik vaka sınavını ve kitapçığını diğer dile (Almanca <-> Türkçe) çevirir ve senkronize eder.
+    """
+    api_key = get_effective_api_key()
+    model_name = get_effective_model_name()
+    target_lang = req.target_language or "tr"
+    
+    if api_key and len(api_key.strip()) > 10:
+        try:
+            translated_case = await translate_case_exam(
+                case_data=req.case_data,
+                target_language=target_lang,
+                api_key=api_key.strip(),
+                model_name=model_name
+            )
+            return {"success": True, "case": translated_case, "is_mock": False}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Vaka çeviri hatası: {str(e)}")
+    else:
+        # Mock çeviri fallback
+        topic = req.case_data.get("title") or req.case_data.get("german", {}).get("title") or "Klinik Vaka"
+        mock_case = generate_mock_12_case(topic=topic, language=target_lang)
+        return {"success": True, "case": mock_case, "is_mock": True}
 
 @app.post("/api/evaluate-case-exam")
 async def evaluate_case_exam_endpoint(req: EvaluateCaseExamRequest):

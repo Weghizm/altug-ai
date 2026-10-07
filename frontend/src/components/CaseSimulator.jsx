@@ -124,8 +124,51 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
   
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  const [isTranslatingCase, setIsTranslatingCase] = useState(false);
+  const [bookletPageFilter, setBookletPageFilter] = useState('all'); // 'all' (1-4) | 'tr' (3-4) | 'de' (1-2)
+  const [examLanguage, setExamLanguage] = useState(lang || 'tr');
+
+  useEffect(() => {
+    if (lang) {
+      setExamLanguage(lang);
+    }
+  }, [lang]);
+
+  // 12 Soruluk Vaka ve Sınavı Diğer Dile Çevir / Senkronize Et (Almanca <-> Türkçe)
+  const handleTranslateCase = async (targetLang = 'tr') => {
+    if (!caseData) return;
+    setIsTranslatingCase(true);
+    setErrorMessage('');
+    try {
+      const res = await fetch('/api/translate-case', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          case_data: caseData,
+          target_language: targetLang
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || 'Çeviri işlemi gerçekleştirilemedi.');
+      }
+      if (data.case) {
+        setCaseData(data.case);
+        if (targetLang === 'tr') {
+          setBookletPageFilter('tr');
+          setExamLanguage('tr');
+        } else {
+          setBookletPageFilter('de');
+          setExamLanguage('de');
+        }
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Vaka çevrilirken bir sorun oluştu.');
+    } finally {
+      setIsTranslatingCase(false);
+    }
+  };
 
   // Canlı Kamera Açıldığında Video Akışını Bağla
   useEffect(() => {
@@ -402,7 +445,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
           case_data: caseData,
           user_answers: inputMode === 'text' ? userAnswers : null,
           images: inputMode === 'photo' ? uploadedImages : null,
-          language: lang
+          language: examLanguage || lang
         })
       });
 
@@ -836,6 +879,38 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
             {/* Aksiyon Butonları */}
             <div className="flex flex-wrap items-center space-x-2 w-full md:w-auto justify-end gap-1.5">
+              {/* ÇEVİRİ BUTONU: TÜRKÇEYE ÇEVİR */}
+              <button
+                type="button"
+                onClick={() => handleTranslateCase('tr')}
+                disabled={isTranslatingCase}
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 rounded-xl bg-teal-500/15 border border-teal-500/40 hover:bg-teal-500/25 text-teal-300 hover:text-teal-200 text-xs font-bold shadow-md transition-all active:scale-95"
+                title="Tüm sınavı ve kitapçığı 100% akıcı Türkçeye çevirir"
+              >
+                {isTranslatingCase ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-300" />
+                    <span>Çevriliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                    <span>🇹🇷 Türkçeye Çevir</span>
+                  </>
+                )}
+              </button>
+
+              {/* ÇEVİRİ BUTONU: ALMANCAYA ÇEVİR */}
+              <button
+                type="button"
+                onClick={() => handleTranslateCase('de')}
+                disabled={isTranslatingCase}
+                className="flex items-center space-x-1.5 px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-700 hover:border-blue-500 text-slate-300 hover:text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                title="Tüm sınavı ve kitapçığı DGAI standartlarında Almancaya çevirir"
+              >
+                <span>🇩🇪 Deutsch</span>
+              </button>
+
               {/* 1. DOĞRUDAN 4 SAYFA PDF İNDİR BUTONU (REPORTLAB ENGINE) */}
               <button
                 type="button"
@@ -898,8 +973,69 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
           {activeTabMode === 'booklet' && (
             <div className="space-y-8">
 
-              {/* ---------------- 1. SAYFA (🇩🇪 DEUTSCH: ANAMNESE & 12 FRAGEN) ---------------- */}
-              <div className="booklet-page bg-slate-900/90 border-2 border-teal-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
+              {/* Kitapçık Sayfa / Dil Filtresi ve Durum Çubuğu */}
+              <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/80 border border-slate-800 p-3 sm:p-3.5 rounded-2xl shadow-inner">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-slate-400">📄 Sayfa Görünümü:</span>
+                  <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setBookletPageFilter('all')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        bookletPageFilter === 'all'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      🌐 Tümü (4 Sayfa: DE + TR)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBookletPageFilter('tr')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                        bookletPageFilter === 'tr'
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>🇹🇷 Sadece Türkçe (Sayfa 3-4)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBookletPageFilter('de')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                        bookletPageFilter === 'de'
+                          ? 'bg-amber-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>🇩🇪 Nur Deutsch (Seite 1-2)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs">
+                  <span className="text-slate-400 hidden md:inline">İki dilli sınav eşleniktir.</span>
+                  <button
+                    type="button"
+                    onClick={() => handleTranslateCase('tr')}
+                    disabled={isTranslatingCase}
+                    className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-300 hover:bg-teal-500/20 font-bold transition-all"
+                  >
+                    {isTranslatingCase ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-300" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                    )}
+                    <span>Türkçe Çeviriyi Yenile</span>
+                  </button>
+                </div>
+              </div>
+
+              {(bookletPageFilter === 'all' || bookletPageFilter === 'de') && (
+                <>
+                  {/* ---------------- 1. SAYFA (🇩🇪 DEUTSCH: ANAMNESE & 12 FRAGEN) ---------------- */}
+                  <div className="booklet-page bg-slate-900/90 border-2 border-teal-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
                 
                 {/* Sayfa Başlığı */}
                 <div className="booklet-page-header flex justify-between items-center border-b border-teal-500/30 pb-2">
@@ -1022,8 +1158,12 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                 </div>
 
               </div>
+                </>
+              )}
 
-              {/* ---------------- 3. SAYFA (🇹🇷 TÜRKÇE: ANAMNEZ & 12 SORU) ---------------- */}
+              {(bookletPageFilter === 'all' || bookletPageFilter === 'tr') && (
+                <>
+                  {/* ---------------- 3. SAYFA (🇹🇷 TÜRKÇE: ANAMNEZ & 12 SORU) ---------------- */}
               <div className="booklet-page bg-slate-900/90 border-2 border-blue-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
                 
                 {/* Sayfa Başlığı */}
@@ -1147,6 +1287,8 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                 </div>
 
               </div>
+                </>
+              )}
 
             </div>
           )}
@@ -1157,15 +1299,62 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
           {activeTabMode === 'exam' && (
             <div className="space-y-6">
 
+              {/* Sınav Dili Seçici ve AI Çeviri Kontrol Çubuğu */}
+              <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/80 border border-slate-800 p-3 sm:p-3.5 rounded-2xl shadow-inner">
+                <div className="flex items-center space-x-2">
+                  <span className="text-xs font-bold text-slate-400">🌐 Sınav Dili:</span>
+                  <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setExamLanguage('tr')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                        examLanguage === 'tr'
+                          ? 'bg-teal-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>🇹🇷 Türkçe Sınav Soruları</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExamLanguage('de')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all ${
+                        examLanguage === 'de'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      <span>🇩🇪 Deutsch Prüfungsfragen</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => handleTranslateCase(examLanguage === 'tr' ? 'tr' : 'de')}
+                    disabled={isTranslatingCase}
+                    className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-teal-500/10 border border-teal-500/30 hover:bg-teal-500/20 text-teal-300 text-xs font-bold transition-all"
+                  >
+                    {isTranslatingCase ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-teal-300" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                    )}
+                    <span>{examLanguage === 'tr' ? '🇹🇷 Türkçeye Çevir / Yenile' : '🇩🇪 Almancaya Çevir / Yenile'}</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Hasta Hikayesi Kartı */}
               <div className="bg-slate-900/90 border-2 border-teal-500/40 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-teal-400 px-2.5 py-0.5 rounded-full bg-teal-500/10 border border-teal-500/20">
-                      {lang === 'de' ? 'Patientengeschichte & Befunde' : 'Hasta Hikayesi & Klinik Anamnez'}
+                      {examLanguage === 'de' ? 'Patientengeschichte & Befunde' : 'Hasta Hikayesi & Klinik Anamnez'}
                     </span>
                     <h2 className="text-xl sm:text-2xl font-black text-white mt-2">
-                      {lang === 'de' ? (caseData.german?.title || caseData.title) : (caseData.turkish?.title || caseData.title)}
+                      {examLanguage === 'de' ? (caseData.german?.title || caseData.title) : (caseData.turkish?.title || caseData.title)}
                     </h2>
                   </div>
 
@@ -1173,7 +1362,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                     <div className="flex items-center space-x-2 text-xs text-slate-300 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
                       <Activity className="w-3.5 h-3.5 text-teal-400" />
                       <span>
-                        {caseData.patient_profile.age} {lang === 'de' ? 'Jahre' : 'Yaşında'}, {caseData.patient_profile.gender}
+                        {caseData.patient_profile.age} {examLanguage === 'de' ? 'Jahre' : 'Yaşında'}, {caseData.patient_profile.gender}
                       </span>
                     </div>
                   )}
@@ -1181,20 +1370,20 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
                 <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
                   <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    {lang === 'de' ? 'Aktuelle Anamnese:' : 'Hasta Anamnezi & Öykü:'}
+                    {examLanguage === 'de' ? 'Aktuelle Anamnese:' : 'Hasta Anamnezi & Öykü:'}
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-                    {lang === 'de' ? (caseData.german?.patient_story || caseData.patient_story) : (caseData.turkish?.patient_story || caseData.patient_story)}
+                    {examLanguage === 'de' ? (caseData.german?.patient_story || caseData.patient_story) : (caseData.turkish?.patient_story || caseData.patient_story)}
                   </p>
                 </div>
 
                 {(caseData.german?.vital_and_findings || caseData.turkish?.vital_and_findings || caseData.vital_and_findings) && (
                   <div className="p-4 rounded-2xl bg-teal-950/20 border border-teal-800/40 space-y-1.5">
                     <h4 className="text-xs font-bold text-teal-300 uppercase tracking-wider">
-                      {lang === 'de' ? 'Vitalparameter & Befunde:' : 'Vital Parametreler ve Muayene Bulguları:'}
+                      {examLanguage === 'de' ? 'Vitalparameter & Befunde:' : 'Vital Parametreler ve Muayene Bulguları:'}
                     </h4>
                     <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line">
-                      {lang === 'de' ? (caseData.german?.vital_and_findings || caseData.vital_and_findings) : (caseData.turkish?.vital_and_findings || caseData.vital_and_findings)}
+                      {examLanguage === 'de' ? (caseData.german?.vital_and_findings || caseData.vital_and_findings) : (caseData.turkish?.vital_and_findings || caseData.vital_and_findings)}
                     </p>
                   </div>
                 )}
@@ -1398,7 +1587,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
                   {/* 12 Soruluk Soru & Cevap Giriş Alanları */}
                   <div className="space-y-4">
-                    {((lang === 'de' ? (caseData.german?.questions || caseData.questions) : (caseData.turkish?.questions || caseData.questions)) || []).map((q) => {
+                    {((examLanguage === 'de' ? (caseData.german?.questions || caseData.questions) : (caseData.turkish?.questions || caseData.questions)) || []).map((q) => {
                       const isMandatory = q.id <= 6;
                       const hasAnswer = Boolean(userAnswers[q.id]?.trim());
 
@@ -1423,7 +1612,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                                       ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                                       : 'bg-blue-500/10 text-blue-300 border-blue-500/30'
                                   }`}>
-                                    {q.category} {isMandatory ? (lang === 'de' ? '(Pflicht)' : '(Zorunlu)') : ''}
+                                    {q.category} {isMandatory ? (examLanguage === 'de' ? '(Pflicht)' : '(Zorunlu)') : ''}
                                   </span>
                                 )}
                               </div>
@@ -1433,7 +1622,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                             </div>
 
                             <span className="text-[11px] font-semibold text-slate-400 shrink-0">
-                              {q.max_points || 10} {lang === 'de' ? 'Punkte' : 'Puan'}
+                              {q.max_points || 10} {examLanguage === 'de' ? 'Punkte' : 'Puan'}
                             </span>
                           </div>
 
@@ -1441,7 +1630,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                             value={userAnswers[q.id] || ''}
                             onChange={(e) => handleAnswerChange(q.id, e.target.value)}
                             rows={3}
-                            placeholder={lang === 'de' ? `Ihre Antwort zu Frage #${q.id} eingeben...` : `Soru #${q.id} için klinik yaklaşımınızı ve cevabınızı buraya yazınız...`}
+                            placeholder={examLanguage === 'de' ? `Ihre Antwort zu Frage #${q.id} eingeben...` : `Soru #${q.id} için klinik yaklaşımınızı ve cevabınızı buraya yazınız...`}
                             className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs sm:text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-teal-500 leading-relaxed"
                           />
                         </div>
