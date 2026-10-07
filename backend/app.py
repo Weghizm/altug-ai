@@ -44,7 +44,9 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 class GenerateCaseExamRequest(BaseModel):
     topic: Optional[str] = "Klinik Acil Vaka"
     doc_id: Optional[str] = None
+    doc_ids: Optional[List[str]] = None
     topic_id: Optional[str] = None
+    topic_ids: Optional[List[str]] = None
     source_type: Optional[str] = "pdf" # "pdf" | "web"
     language: Optional[str] = "tr" # "tr" | "de"
     urgency_type: Optional[str] = "auto" # "elective" | "emergency" | "auto"
@@ -672,19 +674,59 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
     topic = req.topic or "Klinik Acil Vaka"
     source_type = req.source_type or "pdf"
     
+    # Çoklu veya tekli PDF belge ID'lerini topla
+    selected_doc_ids = []
+    if req.doc_ids and isinstance(req.doc_ids, list):
+        selected_doc_ids = [d for d in req.doc_ids if d and d != "all"]
+    elif req.doc_id and req.doc_id != "all":
+        selected_doc_ids = [req.doc_id]
+
     context_text = ""
-    if source_type == "pdf" and req.doc_id and req.doc_id != "all":
-        doc = get_document_by_id(req.doc_id)
-        if doc:
-            if req.topic_id:
-                topic_obj = next((t for t in doc.get("topics", []) if t.get("id") == req.topic_id), None)
-                if topic_obj:
-                    context_text = get_topic_content(doc["filepath"], topic_obj["start_page"], topic_obj["end_page"], max_chars=12000)
-                    topic = f"{doc['filename']} - {topic_obj['title']}"
-            if not context_text:
-                context_text = get_topic_content(doc["filepath"], 1, min(15, doc["page_count"]), max_chars=12000)
-                if not req.topic:
-                    topic = f"{doc['filename']} Genel Vaka"
+    if source_type == "pdf" and selected_doc_ids:
+        doc_contexts = []
+        doc_titles = []
+        max_chars_per_doc = max(3000, 16000 // len(selected_doc_ids))
+        
+        for d_id in selected_doc_ids:
+            doc = get_document_by_id(d_id)
+            if not doc:
+                continue
+            doc_titles.append(doc.get("filename", "Kitap"))
+            
+            doc_chunk = ""
+            filepath = doc.get("filepath", "")
+            if filepath and os.path.exists(filepath):
+                try:
+                    if len(selected_doc_ids) == 1 and req.topic_id:
+                        topic_obj = next((t for t in doc.get("topics", []) if t.get("id") == req.topic_id), None)
+                        if topic_obj:
+                            doc_chunk = get_topic_content(filepath, topic_obj["start_page"], topic_obj["end_page"], max_chars=max_chars_per_doc)
+                    if not doc_chunk:
+                        doc_chunk = get_topic_content(filepath, 1, min(25, doc.get("page_count", 25)), max_chars=max_chars_per_doc)
+                except Exception:
+                    pass
+            
+            # Eğer fiziksel dosya yoksa veya metin çekilemediyse veritabanındaki konu başlıkları ve özetlerini kullan
+            if not doc_chunk and doc.get("topics"):
+                topics_summary = []
+                for t in doc.get("topics", [])[:12]:
+                    t_title = t.get("title", "")
+                    t_prev = t.get("preview", "")
+                    if t_title:
+                        topics_summary.append(f"- {t_title}: {t_prev}")
+                doc_chunk = "\n".join(topics_summary)
+                
+            if doc_chunk:
+                doc_contexts.append(f"=== KAYNAK KİTAP: {doc.get('filename')} ===\n{doc_chunk}")
+                
+        if doc_contexts:
+            context_text = "\n\n".join(doc_contexts)
+            
+        if not req.topic or req.topic.strip() in ["Klinik Acil Vaka", "", "Kombinierter klinischer ATA-Fall", "Kombine Klinik Vaka & Sınav Soruları"]:
+            if len(doc_titles) > 1:
+                topic = f"Karma Vaka ({', '.join(doc_titles[:3])})"
+            elif len(doc_titles) == 1:
+                topic = f"{doc_titles[0]} Klinik Vaka"
             
     if api_key and len(api_key.strip()) > 10:
         try:

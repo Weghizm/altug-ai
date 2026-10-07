@@ -155,19 +155,19 @@ export default function PdfUploader({ documents, selectedDocId, onSelectDoc, onU
                 <div
                   key={doc.id}
                   onClick={() => onSelectDoc(doc.id)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-w-0 overflow-hidden ${
                     isSelected
                       ? 'bg-blue-950/30 border-blue-500/60 shadow-md shadow-blue-500/5 ring-1 ring-blue-500/30'
                       : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3">
+                  <div className="flex items-start justify-between gap-3 w-full min-w-0">
+                    <div className="flex items-start space-x-3 min-w-0 flex-1">
                       <div className={`p-2.5 rounded-lg shrink-0 ${isSelected ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'}`}>
                         <FileText className="w-5 h-5" />
                       </div>
-                      <div className="min-w-0 pr-2">
-                        <h5 className="text-sm font-medium text-slate-200 truncate" title={doc.filename}>
+                      <div className="min-w-0 flex-1">
+                        <h5 className="text-sm font-semibold text-slate-200 truncate block w-full" title={doc.filename}>
                           {doc.filename}
                         </h5>
                         <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-400">
@@ -186,7 +186,7 @@ export default function PdfUploader({ documents, selectedDocId, onSelectDoc, onU
                         onDeleteDoc(doc.id);
                       }}
                       title="Belgeyi Sil"
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors"
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40 transition-colors shrink-0"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

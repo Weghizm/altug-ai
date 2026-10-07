@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Stethoscope, CheckCircle2, AlertCircle, Loader2, Send, Copy, Check, Lightbulb, ChevronRight, BookOpen, Activity, ShieldCheck, UserCheck, MessageSquare, Award, ArrowRight, RotateCcw, Globe, FileText, Search, Printer, BookMarked, Edit3, Download, UploadCloud, Image, Trash2, History, TrendingUp, AlertTriangle, TrendingDown, X, Eye, Camera, RefreshCw, Smartphone } from 'lucide-react';
+import { Sparkles, Stethoscope, CheckCircle2, AlertCircle, Loader2, Send, Copy, Check, Lightbulb, ChevronRight, BookOpen, Activity, ShieldCheck, UserCheck, MessageSquare, Award, ArrowRight, RotateCcw, Globe, FileText, Search, Printer, BookMarked, Edit3, Download, UploadCloud, Image, Trash2, History, TrendingUp, AlertTriangle, TrendingDown, X, Eye, Camera, RefreshCw, Smartphone, CheckSquare, Square } from 'lucide-react';
 import { translations } from '../i18n';
 
 export default function CaseSimulator({ lang = 'tr', documents = [], selectedDocId }) {
@@ -45,8 +45,50 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
   // Kaynak seçimi: 'pdf' (Yüklü PDF'lerden) | 'web' (Web & Tıp Literatüründen)
   const [sourceType, setSourceType] = useState(documents.length > 0 ? 'pdf' : 'web');
+  const [selectedCaseDocIds, setSelectedCaseDocIds] = useState(() => {
+    if (selectedDocId) return [selectedDocId];
+    if (documents.length > 0) return [documents[0].id];
+    return [];
+  });
   const [selectedCaseDocId, setSelectedCaseDocId] = useState(selectedDocId || (documents[0]?.id || ''));
   const [selectedTopicId, setSelectedTopicId] = useState('');
+
+  useEffect(() => {
+    if (selectedDocId && !selectedCaseDocIds.includes(selectedDocId)) {
+      setSelectedCaseDocIds([selectedDocId]);
+      setSelectedCaseDocId(selectedDocId);
+    } else if (selectedCaseDocIds.length === 0 && documents.length > 0) {
+      setSelectedCaseDocIds([documents[0].id]);
+      setSelectedCaseDocId(documents[0].id);
+    }
+  }, [selectedDocId, documents]);
+
+  const handleToggleDoc = (docId) => {
+    setSelectedCaseDocIds((prev) => {
+      let updated;
+      if (prev.includes(docId)) {
+        updated = prev.filter((id) => id !== docId);
+      } else {
+        updated = [...prev, docId];
+      }
+      setSelectedCaseDocId(updated[0] || '');
+      setSelectedTopicId('');
+      return updated;
+    });
+  };
+
+  const handleSelectAllDocs = () => {
+    const allIds = documents.map((d) => d.id);
+    setSelectedCaseDocIds(allIds);
+    setSelectedCaseDocId(allIds[0] || '');
+    setSelectedTopicId('');
+  };
+
+  const handleClearDocs = () => {
+    setSelectedCaseDocIds([]);
+    setSelectedCaseDocId('');
+    setSelectedTopicId('');
+  };
   
   // Aşama durumu: 'config' (vaka üret) | 'solving' (çalışma ve sınav ekranı) | 'evaluation' (karşılaştırmalı karne)
   const [stage, setStage] = useState('config'); // 'config', 'solving', 'evaluation'
@@ -223,13 +265,17 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
     let finalUrgency = forcedUrgency || urgencyType;
     
     if (sourceType === 'pdf') {
-      if (!selectedCaseDocId) {
-        setErrorMessage(lang === 'de' ? 'Bitte wählen Sie zuerst ein PDF-Dokument aus.' : 'Lütfen önce bir PDF belgesi seçin.');
+      if (selectedCaseDocIds.length === 0) {
+        setErrorMessage(lang === 'de' ? 'Bitte wählen Sie mindestens ein PDF-Buch aus.' : 'Lütfen en az bir PDF kitabı seçin.');
         return;
       }
       if (!finalTopic && !selectedTopicId) {
-        setErrorMessage(lang === 'de' ? 'Bitte wählen Sie ein Thema aus oder geben Sie einen Suchbegriff ein.' : 'Lütfen bir konu başlığı seçin veya konu adı yazın.');
-        return;
+        if (selectedCaseDocIds.length > 1) {
+          finalTopic = lang === 'de' ? 'Kombinierter klinischer ATA-Fall' : 'Kombine Klinik Vaka & Sınav Soruları';
+        } else {
+          setErrorMessage(lang === 'de' ? 'Bitte wählen Sie ein Thema aus veya bir arama terimi girin.' : 'Lütfen bir konu başlığı seçin veya konu adı yazın.');
+          return;
+        }
       }
     } else {
       if (!finalTopic) {
@@ -251,8 +297,9 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: finalTopic,
-          doc_id: sourceType === 'pdf' ? selectedCaseDocId : null,
-          topic_id: sourceType === 'pdf' ? selectedTopicId : null,
+          doc_id: sourceType === 'pdf' ? (selectedCaseDocIds[0] || null) : null,
+          doc_ids: sourceType === 'pdf' ? selectedCaseDocIds : null,
+          topic_id: (sourceType === 'pdf' && selectedCaseDocIds.length === 1) ? (selectedTopicId || null) : null,
           source_type: sourceType,
           language: lang,
           urgency_type: finalUrgency
@@ -462,46 +509,106 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
 
           {/* PDF Kaynak Alanı */}
           {sourceType === 'pdf' && (
-            <div className="p-4 rounded-2xl bg-slate-950/50 border border-slate-800/80 space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-4">
               {documents.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      {lang === 'de' ? 'PDF-Dokument auswählen:' : 'Kullanılacak PDF Kitabı:'}
-                    </label>
-                    <select
-                      value={selectedCaseDocId}
-                      onChange={(e) => {
-                        setSelectedCaseDocId(e.target.value);
-                        setSelectedTopicId('');
-                      }}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-blue-500"
-                    >
-                      {documents.map((doc) => (
-                        <option key={doc.id} value={doc.id}>
-                          {doc.filename} ({doc.total_pages || 0} sayfa)
-                        </option>
-                      ))}
-                    </select>
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/60 pb-3">
+                    <div className="flex items-center space-x-2">
+                      <BookOpen className="w-4 h-4 text-blue-400" />
+                      <label className="text-xs sm:text-sm font-bold text-slate-200">
+                        {lang === 'de' ? 'Zu verwendende PDF-Bücher auswählen:' : 'Kullanılacak PDF Kitapları:'}
+                      </label>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        {selectedCaseDocIds.length} {lang === 'de' ? 'Ausgewählt' : 'Seçili'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllDocs}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
+                      >
+                        {lang === 'de' ? 'Alle auswählen' : 'Tümünü Seç'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearDocs}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-slate-700/60 text-slate-400 font-medium transition-colors"
+                      >
+                        {lang === 'de' ? 'Zurücksetzen' : 'Temizle'}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300">
-                      {lang === 'de' ? 'Kapitel / Thema (Optional):' : 'Bölüm / Konu Seçimi (Opsiyonel):'}
-                    </label>
-                    <select
-                      value={selectedTopicId}
-                      onChange={(e) => setSelectedTopicId(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="">{lang === 'de' ? 'Gesamtes Dokument / Allgemein' : 'Tüm Dokümandan / Genel Vaka'}</option>
-                      {(activeDoc?.topics || []).map((top) => (
-                        <option key={top.id} value={top.id}>
-                          {top.title}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Kitap Kartları / Çoklu Seçim Izgarası */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {documents.map((doc) => {
+                      const isSelected = selectedCaseDocIds.includes(doc.id);
+                      return (
+                        <div
+                          key={doc.id}
+                          onClick={() => handleToggleDoc(doc.id)}
+                          className={`flex items-start space-x-3 p-3 rounded-xl border cursor-pointer transition-all select-none ${
+                            isSelected
+                              ? 'bg-blue-600/15 border-blue-500 text-white shadow-sm shadow-blue-500/10 ring-1 ring-blue-500/30'
+                              : 'bg-slate-900/60 border-slate-800/80 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
+                          }`}
+                        >
+                          <div className="pt-0.5">
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-blue-400" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-500" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate text-slate-200" title={doc.filename}>
+                              {doc.filename}
+                            </p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">
+                              {doc.page_count || doc.total_pages || 0} {lang === 'de' ? 'Seiten' : 'sayfa'} • {(doc.topics || []).length} {lang === 'de' ? 'Themen' : 'konu'}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  {/* Eğer Tek Bir Kitap Seçiliyse: Bölüm/Konu Seçimi Göster */}
+                  {selectedCaseDocIds.length === 1 && (
+                    <div className="pt-2 border-t border-slate-800/60">
+                      <div className="max-w-md space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-300">
+                          {lang === 'de' ? 'Kapitel / Thema (Optional):' : 'Bölüm / Konu Seçimi (Opsiyonel):'}
+                        </label>
+                        <select
+                          value={selectedTopicId}
+                          onChange={(e) => setSelectedTopicId(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">{lang === 'de' ? 'Gesamtes Dokument / Allgemein' : 'Tüm Dokümandan / Genel Vaka'}</option>
+                          {(activeDoc?.topics || []).map((top) => (
+                            <option key={top.id} value={top.id}>
+                              {top.title}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Eğer Birden Fazla Kitap Seçiliyse Bilgilendirme Rozeti */}
+                  {selectedCaseDocIds.length > 1 && (
+                    <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-800/60 text-blue-300 text-xs flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-blue-400 shrink-0" />
+                      <span>
+                        {lang === 'de'
+                          ? `Kombinierter Fall: 12 Prüfungsfragen und Fallanalyse werden aus ${selectedCaseDocIds.length} ausgewählten Lehrbüchern gleichzeitig zusammengestellt.`
+                          : `Karma Sınav: 12 soru ve vaka analizi seçtiğiniz ${selectedCaseDocIds.length} kitaptan aynı anda harmanlanarak hazırlanacak.`}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-4 text-xs text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-xl">
@@ -665,7 +772,9 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
                 <span>
                   {sourceType === 'web'
                     ? (lang === 'de' ? 'Klinischer Fall wird aus weltweiter Literatur recherchiert...' : 'Dünya tıp literatüründen 4 sayfalık iki dilli vaka oluşturuluyor...')
-                    : (lang === 'de' ? 'Fall wird aus Ihrem PDF-Buch generiert...' : 'Yüklü PDF kitabınızdan 4 sayfalık vaka kitapçığı hazırlanıyor...')}
+                    : (selectedCaseDocIds.length > 1
+                        ? (lang === 'de' ? `Klinischer Fall wird aus ${selectedCaseDocIds.length} PDF-Büchern generiert...` : `Seçilen ${selectedCaseDocIds.length} kitaptan 4 sayfalık karma vaka kitapçığı hazırlanıyor...`)
+                        : (lang === 'de' ? 'Fall wird aus Ihrem PDF-Buch generiert...' : 'Yüklü PDF kitabınızdan 4 sayfalık vaka kitapçığı hazırlanıyor...'))}
                 </span>
               </>
             ) : (

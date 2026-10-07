@@ -133,12 +133,12 @@ async def generate_12_question_case(
     else:
         user_text = f"""{CASE_GEN_PROMPT_BILINGUAL}
 {urgency_directive}
-### [KAYNAK: YÜKLÜ PDF DERS NOTU / KİTAP]
-Konu: {topic}
+### [KAYNAK: YÜKLÜ PDF DERS NOTU / KİTAPLAR]
+Konu / Başlık: {topic}
 """
         if context_text.strip():
-            user_text += f"\nPDF METİN İÇERİĞİ:\n\"\"\"\n{context_text[:12000]}\n\"\"\"\n"
-        user_text += "\nLütfen bu PDF içeriğindeki bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
+            user_text += f"\nPDF METİN İÇERİKLERİ VE KAYNAKLAR:\n\"\"\"\n{context_text[:16000]}\n\"\"\"\n"
+        user_text += "\nLütfen verilen bu PDF kaynaklarındaki (birden fazla kitap varsa her birinden faydalanıp harmanlayarak) klinik, anestezik ve cerrahi bilgilere dayanarak 4 sayfalık iki dilli (Almanca ve Türkçe) klinik vaka JSON dosyasını oluştur."
 
     clean_model = "gemini-3.5-flash-lite"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{clean_model}:generateContent?key={api_key}"
