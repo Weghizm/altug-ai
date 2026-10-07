@@ -12,6 +12,7 @@ import AiChat from './components/AiChat';
 import AnamnesisSolver from './components/AnamnesisSolver';
 import { Sparkles, BookOpen, AlertCircle, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { translations } from './i18n';
+import { getLocalDocuments, saveLocalDocument, deleteLocalDocument } from './storage';
 
 export default function App() {
   const [lang, setLang] = useState('tr'); // 'tr' | 'de'
@@ -54,13 +55,34 @@ export default function App() {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch('/api/documents');
-      const data = await res.json();
-      if (data.documents) {
-        setDocuments(data.documents);
-        if (data.documents.length > 0 && !selectedDocId) {
-          setSelectedDocId(data.documents[0].id);
+      // 1. Önce kullanıcının kendi tarayıcısındaki kalıcı IndexedDB kütüphanesini al
+      const localDocs = await getLocalDocuments();
+
+      // 2. Sunucudaki belgeleri al
+      let serverDocs = [];
+      try {
+        const res = await fetch('/api/documents');
+        const data = await res.json();
+        if (data.documents) {
+          serverDocs = data.documents;
         }
+      } catch (err) {
+        console.warn('Sunucudan belgeler çekilemedi:', err);
+      }
+
+      // 3. Belgeleri ID'ye göre birleştir (yerel olanlar asla kaybolmaz!)
+      const mergedMap = new Map();
+      localDocs.forEach((d) => mergedMap.set(d.id, d));
+      serverDocs.forEach((d) => {
+        if (!mergedMap.has(d.id)) {
+          mergedMap.set(d.id, d);
+        }
+      });
+
+      const allDocs = Array.from(mergedMap.values());
+      setDocuments(allDocs);
+      if (allDocs.length > 0 && !selectedDocId) {
+        setSelectedDocId(allDocs[0].id);
       }
     } catch (err) {
       console.error('Belgeler yüklenemedi:', err);
@@ -103,8 +125,14 @@ export default function App() {
     }
   };
 
-  const handleUploadSuccess = (newDoc) => {
-    setDocuments((prev) => [newDoc, ...prev]);
+  const handleUploadSuccess = async (newDoc) => {
+    // Tarayıcı içi kalıcı IndexedDB'ye kaydet (Render kapansa/güncellense bile kaybolmaz!)
+    await saveLocalDocument(newDoc);
+
+    setDocuments((prev) => {
+      const filtered = prev.filter((d) => d.id !== newDoc.id);
+      return [newDoc, ...filtered];
+    });
     setSelectedDocId(newDoc.id);
     setSelectedTopicIds([]);
     setCustomTopic('');
@@ -115,7 +143,8 @@ export default function App() {
   const handleDeleteDoc = async (docId) => {
     if (!window.confirm('Bu belgeyi silmek istediğinize emin misiniz?')) return;
     try {
-      await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+      await deleteLocalDocument(docId);
+      fetch(`/api/documents/${docId}`, { method: 'DELETE' }).catch(() => {});
       setDocuments((prev) => prev.filter((d) => d.id !== docId));
       if (selectedDocId === docId) {
         setSelectedDocId(documents.find((d) => d.id !== docId)?.id || null);

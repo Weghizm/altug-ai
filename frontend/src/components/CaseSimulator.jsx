@@ -292,6 +292,13 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
     setUploadedImages([]);
 
     try {
+      const selectedDocs = documents.filter((d) => selectedCaseDocIds.includes(d.id));
+      const docSummaries = selectedDocs.map((d) => ({
+        id: d.id,
+        filename: d.filename,
+        topics: (d.topics || []).slice(0, 15)
+      }));
+
       const res = await fetch('/api/generate-case-exam', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -299,6 +306,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
           topic: finalTopic,
           doc_id: sourceType === 'pdf' ? (selectedCaseDocIds[0] || null) : null,
           doc_ids: sourceType === 'pdf' ? selectedCaseDocIds : null,
+          doc_summaries: sourceType === 'pdf' ? docSummaries : null,
           topic_id: (sourceType === 'pdf' && selectedCaseDocIds.length === 1) ? (selectedTopicId || null) : null,
           source_type: sourceType,
           language: lang,

@@ -45,6 +45,7 @@ class GenerateCaseExamRequest(BaseModel):
     topic: Optional[str] = "Klinik Acil Vaka"
     doc_id: Optional[str] = None
     doc_ids: Optional[List[str]] = None
+    doc_summaries: Optional[List[dict]] = None
     topic_id: Optional[str] = None
     topic_ids: Optional[List[str]] = None
     source_type: Optional[str] = "pdf" # "pdf" | "web"
@@ -687,8 +688,17 @@ async def generate_case_exam_endpoint(req: GenerateCaseExamRequest):
         doc_titles = []
         max_chars_per_doc = max(3000, 16000 // len(selected_doc_ids))
         
+        # İstemciden gelen yerel belge özetleri haritası (IndexedDB desteği)
+        client_summaries_map = {}
+        if req.doc_summaries and isinstance(req.doc_summaries, list):
+            for s in req.doc_summaries:
+                if isinstance(s, dict) and s.get("id"):
+                    client_summaries_map[s["id"]] = s
+
         for d_id in selected_doc_ids:
             doc = get_document_by_id(d_id)
+            if not doc and d_id in client_summaries_map:
+                doc = client_summaries_map[d_id]
             if not doc:
                 continue
             doc_titles.append(doc.get("filename", "Kitap"))
