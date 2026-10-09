@@ -10,6 +10,7 @@ export default function CaseSimulator({ lang = 'tr', documents = [], selectedDoc
   };
 
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
   // Doğrudan 4 Sayfalık A4 PDF Dosyası İndirme (ReportLab Engine)
   const handleDownloadDirectPdf = async () => {
